@@ -102,7 +102,7 @@ export default function HeroCarousel() {
                   )}
 
                   <div className="flex items-center gap-2 text-xs text-white/30 mb-3 flex-wrap">
-                    {movie.genre.map((g) => (
+                    {movie.genre.map((g: string) => (
                       <span key={g} className="flex items-center gap-1">
                         <span className="w-1 h-1 rounded-full bg-cinema-red/70" />
                         {g}
