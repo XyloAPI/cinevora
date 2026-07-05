@@ -16,16 +16,30 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const validUser = import.meta.env.VITE_ADMIN_USERNAME
-    const validPass = import.meta.env.VITE_ADMIN_PASSWORD
-    if (username === validUser && password === validPass) {
-      sessionStorage.setItem('admin_auth', 'true')
-      onLogin()
-    } else {
-      setError('Invalid credentials')
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        sessionStorage.setItem('admin_token', data.token)
+        sessionStorage.setItem('admin_auth', 'true')
+        onLogin()
+      } else {
+        setError(data.error || 'Invalid credentials')
+      }
+    } catch {
+      setError('Connection error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -41,12 +55,14 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
             <h1 className="text-sm font-semibold">Admin Access</h1>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
-            <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-cinema-800 text-white text-[13px] px-3 py-2 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50" />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-cinema-800 text-white text-[13px] px-3 py-2 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50" />
+            <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} disabled={loading}
+              className="w-full bg-cinema-800 text-white text-[13px] px-3 py-2 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50 disabled:opacity-50" />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading}
+              className="w-full bg-cinema-800 text-white text-[13px] px-3 py-2 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50 disabled:opacity-50" />
             {error && <p className="text-[11px] text-cinema-red">{error}</p>}
-            <button type="submit" className="w-full py-2 bg-cinema-red text-white text-[13px] font-medium rounded hover:bg-cinema-red-dark transition-colors">Sign In</button>
+            <button type="submit" disabled={loading} className="w-full py-2 bg-cinema-red text-white text-[13px] font-medium rounded hover:bg-cinema-red-dark transition-colors disabled:opacity-50">
+              {loading ? 'Signing In...' : 'Sign In'}
+            </button>
           </form>
         </div>
       </div>
@@ -140,6 +156,7 @@ export default function AdminPanel() {
 
   function logout() {
     sessionStorage.removeItem('admin_auth')
+    sessionStorage.removeItem('admin_token')
     setAuthed(false)
   }
 

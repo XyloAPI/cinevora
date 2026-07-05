@@ -1,3 +1,5 @@
+import { tmdbFetch } from '../helper'
+
 export async function onRequest(context) {
   const { request, env } = context
   const url = new URL(request.url)
@@ -12,11 +14,5 @@ export async function onRequest(context) {
   }
 
   const tmdbUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&page=${page}&language=id-ID`
-  const resp = await fetch(tmdbUrl, {
-    headers: { Authorization: `Bearer ${env.TMDB_READ_ACCESS_TOKEN}` },
-  })
-  return new Response(await resp.text(), {
-    status: resp.status,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return tmdbFetch(tmdbUrl, env)
 }

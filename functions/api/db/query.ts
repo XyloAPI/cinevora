@@ -1,3 +1,31 @@
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+function isReadOnlyQuery(sql: string): boolean {
+  const normalized = sql.trim().toLowerCase()
+  if (!normalized.startsWith('select')) {
+    return false
+  }
+  if (normalized.includes(';')) {
+    const parts = normalized.split(';')
+    if (parts.slice(1).some((p) => p.trim().length > 0)) {
+      return false
+    }
+  }
+  const forbidden = ['insert', 'update', 'delete', 'drop', 'create', 'alter', 'replace', 'upsert']
+  for (const keyword of forbidden) {
+    const regex = new RegExp(`\\b${keyword}\\b`)
+    if (regex.test(normalized)) {
+      return false
+    }
+  }
+  return true
+}
+
 export async function onRequest(context) {
   const { request, env } = context
 
@@ -10,6 +38,33 @@ export async function onRequest(context) {
 
   try {
     const { sql, params = [] } = await request.json()
+
+    // Validate SQL execution privileges
+    const sqlNormalized = sql || ''
+    if (!isReadOnlyQuery(sqlNormalized)) {
+      const authHeader = request.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Missing or invalid token' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      const token = authHeader.substring(7)
+      const adminPass = env.ADMIN_PASSWORD || env.VITE_ADMIN_PASSWORD
+      if (!adminPass) {
+        return new Response(JSON.stringify({ error: 'Admin credentials not configured on server' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      const expectedToken = await sha256(adminPass)
+      if (token !== expectedToken) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+    }
 
     // Convert libsql:// URL to HTTPS for HTTP API
     const httpUrl = env.TURSO_DATABASE_URL.replace('libsql://', 'https://')

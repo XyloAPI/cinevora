@@ -80,16 +80,33 @@ export function useTrendingFromDb() {
     queryKey: ['movies', 'trending-from-db'],
     queryFn: async () => {
       try {
-        const [all, tmdbModule] = await Promise.all([db.fetchAllMovies(), import('@/lib/tmdb')])
-        if (!all) return [] as Movie[]
-        const trending = await tmdbModule.getTrending('week', 1)
-        const trendingOrder = new Map(trending.results.map((r: { id: number }, idx: number) => [r.id, idx + 1]))
-        const filtered = all.filter((m) => m.tmdbId && trendingOrder.has(m.tmdbId))
-        filtered.sort((a, b) => (trendingOrder.get(a.tmdbId!) || 999) - (trendingOrder.get(b.tmdbId!) || 999))
-        // assign trending rank to each movie
-        const withRank = filtered.map((m) => ({ ...m, trendingRank: trendingOrder.get(m.tmdbId!) }))
-        return withRank
-      } catch { return [] as Movie[] }
+        const all = await db.fetchAllMovies()
+        if (!all || all.length === 0) return [] as Movie[]
+
+        try {
+          const tmdbModule = await import('@/lib/tmdb')
+          const trending = await tmdbModule.getTrending('week', 1)
+          if (trending && trending.results && trending.results.length > 0) {
+            const trendingOrder = new Map(trending.results.map((r: { id: number }, idx: number) => [r.id, idx + 1]))
+            const filtered = all.filter((m) => m.tmdbId && trendingOrder.has(m.tmdbId))
+            if (filtered.length > 0) {
+              filtered.sort((a, b) => (trendingOrder.get(a.tmdbId!) || 999) - (trendingOrder.get(b.tmdbId!) || 999))
+              return filtered.map((m) => ({ ...m, trendingRank: trendingOrder.get(m.tmdbId!) }))
+            }
+          }
+        } catch (e) {
+          console.warn('TMDB trending fetch failed, using fallback:', e)
+        }
+
+        // Fallback: movies with isTrending = true, or latest 6 movies
+        const dbTrending = all.filter((m) => m.isTrending)
+        if (dbTrending.length > 0) {
+          return dbTrending.map((m, idx) => ({ ...m, trendingRank: idx + 1 }))
+        }
+        return all.slice(0, 6).map((m, idx) => ({ ...m, trendingRank: idx + 1 }))
+      } catch {
+        return [] as Movie[]
+      }
     },
     staleTime: 1000 * 60 * 60,
   })

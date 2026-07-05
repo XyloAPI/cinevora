@@ -3,9 +3,14 @@ import { slugify } from './utils'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 async function dbQuery<T>(sql: string, params?: any[]): Promise<T[]> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const token = sessionStorage.getItem('admin_token')
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
   const res = await fetch(`${API_BASE}/db/query`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ sql, params }),
   })
   if (!res.ok) throw new Error(`DB error: ${res.statusText}`)
