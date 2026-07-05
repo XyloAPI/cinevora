@@ -34,6 +34,7 @@ export interface Movie {
   streamUrl?: string
   productionCompanies?: string[]
   status?: string
+  trendingRank?: number
 }
 
 export interface NavLink {
