@@ -66,6 +66,26 @@ export async function onRequest(context) {
       }
     }
 
+    // Map raw JS params to Turso type-value parameter objects
+    const tursoArgs = params.map((val: any) => {
+      if (val === null || val === undefined) {
+        return { type: 'null' }
+      }
+      if (typeof val === 'boolean') {
+        return { type: 'integer', value: val ? '1' : '0' }
+      }
+      if (typeof val === 'number') {
+        if (Number.isInteger(val)) {
+          return { type: 'integer', value: val.toString() }
+        }
+        return { type: 'float', value: val }
+      }
+      if (val && typeof val === 'object' && 'type' in val) {
+        return val
+      }
+      return { type: 'text', value: val.toString() }
+    })
+
     // Convert libsql:// URL to HTTPS for HTTP API
     const httpUrl = env.TURSO_DATABASE_URL.replace('libsql://', 'https://')
     const resp = await fetch(`${httpUrl}/v2/pipeline`, {
@@ -75,7 +95,7 @@ export async function onRequest(context) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        requests: [{ type: 'execute', stmt: { sql, args: params } }],
+        requests: [{ type: 'execute', stmt: { sql, args: tursoArgs } }],
       }),
     })
 
