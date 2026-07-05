@@ -1,6 +1,4 @@
-import { createClient } from '@libsql/client'
-
-export async function onRequest(context: { request: Request; env: Env }) {
+export async function onRequest(context) {
   const { request, env } = context
 
   if (request.method !== 'POST') {
@@ -13,15 +11,23 @@ export async function onRequest(context: { request: Request; env: Env }) {
   try {
     const { sql, params = [] } = await request.json()
 
-    const db = createClient({
-      url: env.TURSO_DATABASE_URL,
-      authToken: env.TURSO_AUTH_TOKEN,
+    // Convert libsql:// URL to HTTPS for HTTP API
+    const httpUrl = env.TURSO_DATABASE_URL.replace('libsql://', 'https://')
+    const resp = await fetch(`${httpUrl}/v2/pipeline`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.TURSO_AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: [{ type: 'execute', stmt: { sql, args: params } }],
+      }),
     })
 
-    const result = await db.execute({ sql, args: params })
-    await db.close()
+    const data = await resp.json()
+    const rows = data.results?.[0]?.response?.result?.rows || []
 
-    return new Response(JSON.stringify({ rows: result.rows }), {
+    return new Response(JSON.stringify({ rows }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -32,9 +38,4 @@ export async function onRequest(context: { request: Request; env: Env }) {
       headers: { 'Content-Type': 'application/json' },
     })
   }
-}
-
-interface Env {
-  TURSO_DATABASE_URL: string
-  TURSO_AUTH_TOKEN: string
 }
