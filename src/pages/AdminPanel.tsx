@@ -23,7 +23,8 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/login', {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
+      const res = await fetch(`${apiBase}/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -152,7 +153,6 @@ export default function AdminPanel() {
     runMigration()
   }, [authed])
 
-  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />
 
   function logout() {
     sessionStorage.removeItem('admin_auth')
@@ -336,6 +336,8 @@ export default function AdminPanel() {
     { key: 'genres', label: 'Genres' },
     { key: 'tools', label: 'Tools' },
   ]
+
+  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />
 
   return (
     <div className="min-h-screen bg-cinema-950 text-white pt-14">
@@ -629,10 +631,13 @@ export default function AdminPanel() {
                             <span className={m.rating > 0 ? 'text-yellow-400' : 'text-white/20'}>{m.rating || '—'}</span>
                           </td>
                           <td className="p-2">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${m.type === 'series' ? 'bg-purple-600/20 text-purple-400' : 'bg-green-600/20 text-green-400'}`}>
-                              {m.type || 'movie'}
-                            </span>
-                            {m.isTrending && <span className="ml-1 text-[10px] text-cinema-red">🔥</span>}
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className={`text-[10px] px-1.5 py-0.5
+                                 rounded ${m.type === 'series' ? 'bg-purple-600/20 text-purple-400' : 'bg-green-600/20 text-green-400'}`}>
+                                {m.type || 'movie'}
+                              </span>
+                              {m.isTrending && <span className="text-[10px]">🔥</span>}
+                            </div>
                           </td>
                           <td className="p-2 text-white/40 truncate max-w-[120px] hidden sm:table-cell">{m.genre.join(', ')}</td>
                           <td className="p-2 text-white/40 hidden md:table-cell">{m.quality || '—'}</td>

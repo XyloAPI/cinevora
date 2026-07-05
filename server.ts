@@ -2,6 +2,7 @@ import express from 'express'
 import type { Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import crypto from 'crypto'
 
 dotenv.config()
 
@@ -133,6 +134,26 @@ app.post('/api/db/query', async (req: any, res: any) => {
     db.close()
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Database error' })
+  }
+})
+
+// Admin Login (local dev)
+app.post('/api/admin/login', (req: any, res: any) => {
+  try {
+    const { username, password } = req.body
+    const expectedUser = process.env.ADMIN_USERNAME || 'admin'
+    const expectedPass = process.env.ADMIN_PASSWORD || 'Cinevora2026!'
+
+    if (username === expectedUser && password === expectedPass) {
+      const token = crypto
+        .createHash('sha256')
+        .update(expectedUser + expectedPass + 'salt123')
+        .digest('hex')
+      return res.json({ success: true, token })
+    }
+    return res.status(401).json({ success: false, error: 'Invalid credentials' })
+  } catch (error) {
+    return res.status(400).json({ success: false, error: 'Invalid payload' })
   }
 })
 

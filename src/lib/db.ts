@@ -118,9 +118,9 @@ function parseDbMovie(row: DbMovie) {
     poster: row.poster,
     backdrop: row.backdrop,
     synopsis: row.synopsis,
-    isTrending: !!row.is_trending,
-    isFeatured: !!row.is_featured,
-    comingSoon: !!row.coming_soon,
+    isTrending: Number(row.is_trending) === 1,
+    isFeatured: Number(row.is_featured) === 1,
+    comingSoon: Number(row.coming_soon) === 1,
     releaseDate: row.release_date || undefined,
     quality: row.quality || undefined,
     duration: row.duration || undefined,
@@ -154,7 +154,7 @@ export async function addMovie(movie: Omit<DbMovie, 'id'> & { id: string }) {
     episodes, seasons, tmdb_id, imdb_id, tagline, runtime, budget, revenue,
     original_language, popularity, vote_count, homepage, director, cast,
     logo_url, trailer_url, stream_url, production_companies, status
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   await dbQuery(sql, [
     movie.id,
     movie.slug,

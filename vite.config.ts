@@ -45,15 +45,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/db': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/api/tmdb': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/api/health': {
+      '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
