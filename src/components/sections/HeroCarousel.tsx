@@ -2,11 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import useEmblaCarousel from 'embla-carousel-react'
 import { IconPlayerPlayFilled, IconInfoCircle } from '@tabler/icons-react'
-import { slugify } from '@/lib/utils'
-import { useTrendingMovies } from '@/hooks/useMovies'
+import { useTrendingFromDb } from '@/hooks/useMovies'
 
 export default function HeroCarousel() {
-  const { data: slides = [] } = useTrendingMovies()
+  const { data: slides = [] } = useTrendingFromDb()
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 })
   const [selected, setSelected] = useState(0)
 
@@ -81,11 +80,11 @@ export default function HeroCarousel() {
                 </p>
 
                 <div className="flex items-center gap-3">
-                  <Link to={`/movie/${slugify(movie.title)}`} className="flex items-center gap-2 px-5 py-2.5 bg-cinema-red text-white font-medium rounded hover:bg-cinema-red-dark transition-colors text-sm">
+                  <Link to={`/movie/${movie.slug}`} className="flex items-center gap-2 px-5 py-2.5 bg-cinema-red text-white font-medium rounded hover:bg-cinema-red-dark transition-colors text-sm">
                     <IconPlayerPlayFilled size={16} />
                     Play Now
                   </Link>
-                  <Link to={`/movie/${slugify(movie.title)}`} className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.08] text-white/70 hover:text-white font-medium rounded hover:bg-white/[0.12] transition-colors text-sm">
+                  <Link to={`/movie/${movie.slug}`} className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.08] text-white/70 hover:text-white font-medium rounded hover:bg-white/[0.12] transition-colors text-sm">
                     <IconInfoCircle size={16} />
                     Details
                   </Link>

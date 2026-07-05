@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { movieSchema } from '@/lib/schemas'
 import * as db from '@/lib/db'
 import type { Movie } from '@/types'
 
@@ -76,32 +75,20 @@ export function useGenres() {
   })
 }
 
-export function useTmdbTrending() {
+export function useTrendingFromDb() {
   return useQuery({
-    queryKey: ['tmdb', 'trending'],
+    queryKey: ['movies', 'trending-from-db'],
     queryFn: async () => {
       try {
-        const { getTrending } = await import('@/lib/tmdb')
-        const data = await getTrending('week', 1)
-        return data.results
-      } catch { return [] }
+        const [all, tmdbModule] = await Promise.all([db.fetchAllMovies(), import('@/lib/tmdb')])
+        if (!all) return [] as Movie[]
+        const trending = await tmdbModule.getTrending('week', 1)
+        const trendingIds = new Set(trending.results.map((r: { id: number }) => r.id))
+        return all.filter((m) => m.tmdbId && trendingIds.has(m.tmdbId))
+      } catch { return [] as Movie[] }
     },
     staleTime: 1000 * 60 * 60,
   })
 }
 
-export function useTmdbPopular() {
-  return useQuery({
-    queryKey: ['tmdb', 'popular'],
-    queryFn: async () => {
-      try {
-        const { getPopular } = await import('@/lib/tmdb')
-        const data = await getPopular(1)
-        return data.results
-      } catch { return [] }
-    },
-    staleTime: 1000 * 60 * 60,
-  })
-}
 
-export { movieSchema }
