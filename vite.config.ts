@@ -45,11 +45,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/turso': {
+      '/api/db': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
       '/api/tmdb': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/health': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

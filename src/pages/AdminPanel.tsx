@@ -118,8 +118,6 @@ export default function AdminPanel() {
     setEditingMovie(null)
   }
 
-  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />
-
   useEffect(() => {
     if (moviesData) {
       setLocalMovies(moviesData)
@@ -128,13 +126,17 @@ export default function AdminPanel() {
   }, [moviesData])
 
   useEffect(() => {
+    if (!authed) return
     tmdb.fetchGenres().catch(() => {})
     tmdb.getTrending('week', 1).then((r) => setTmdbTrending(r.results)).catch(() => {})
-  }, [])
+  }, [authed])
 
   useEffect(() => {
+    if (!authed) return
     runMigration()
-  }, [])
+  }, [authed])
+
+  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />
 
   function logout() {
     sessionStorage.removeItem('admin_auth')
@@ -236,12 +238,12 @@ export default function AdminPanel() {
       backdrop: (form.get('backdrop') as string) || '',
       synopsis: synopsisText || '',
       is_trending: form.get('isTrending') === 'on' ? 1 : 0,
-      is_featured: 0,
+      is_featured: form.get('isFeatured') === 'on' ? 1 : 0,
       coming_soon: form.get('comingSoon') === 'on' ? 1 : 0,
       release_date: (form.get('releaseDate') as string) || null,
       quality: (form.get('quality') as string) || null,
       duration: (form.get('duration') as string) || null,
-      type: (form.get('type') as string) || null,
+      type: (form.get('type') as string) || 'movie',
       episodes: null,
       seasons: null,
       tmdb_id: Number(form.get('tmdbId')) || null,
@@ -551,11 +553,14 @@ export default function AdminPanel() {
                       <input name="isTrending" type="checkbox" defaultChecked={editingMovie.isTrending} className="accent-cinema-red" /> Trending
                     </label>
                     <label className="flex items-center gap-1.5 text-[11px] text-white/40">
+                      <input name="isFeatured" type="checkbox" defaultChecked={editingMovie.isFeatured} className="accent-cinema-red" /> Featured
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-white/40">
                       <input name="comingSoon" type="checkbox" defaultChecked={editingMovie.comingSoon} className="accent-cinema-red" /> Coming Soon
                     </label>
                   </div>
-                  <label className="flex flex-col gap-1 text-[11px] text-white/40">Type<select name="type" defaultValue={editingMovie.type || ''} className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5">
-                    <option value="">Movie</option>
+                  <label className="flex flex-col gap-1 text-[11px] text-white/40">Type<select name="type" defaultValue={editingMovie.type || 'movie'} className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5">
+                    <option value="movie">Movie</option>
                     <option value="series">Series</option>
                   </select></label>
                 </div>
@@ -680,14 +685,13 @@ export default function AdminPanel() {
                 <button onClick={async () => {
                   setDbStatus('checking')
                   try {
-                    const { createClient } = await import('@libsql/client')
-                    const db = createClient({
-                      url: import.meta.env.VITE_TURSO_DATABASE_URL,
-                      authToken: import.meta.env.VITE_TURSO_AUTH_TOKEN,
+                    const res = await fetch('/api/db/query', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ sql: 'SELECT COUNT(*) as count FROM movies', params: [] }),
                     })
-                    await db.execute('SELECT 1')
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
                     setDbStatus('ok')
-                    db.close()
                   } catch {
                     setDbStatus('fail')
                   }
@@ -722,8 +726,8 @@ export default function AdminPanel() {
                 {dbStatus === 'ok' && <p className="text-[12px] text-green-400">Connected</p>}
                 {dbStatus === 'fail' && <p className="text-[12px] text-cinema-red">Connection failed</p>}
                 <div className="mt-3 text-[11px] text-white/30 space-y-1">
-                  <p>URL: <span className="text-white/50">{import.meta.env.VITE_TURSO_DATABASE_URL}</span></p>
                   <p>Movies in DB: <span className="text-white/50">{localMovies.length}</span></p>
+                  <p>API Base: <span className="text-white/50">/api</span></p>
                 </div>
               </div>
 

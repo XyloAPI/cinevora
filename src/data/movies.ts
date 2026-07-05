@@ -1,19 +1,5 @@
-import type { Genre } from '@/types'
+import type { NavLink } from '@/types'
 
-export const genres: Genre[] = [
-  { name: 'Action', href: '/', count: 156 },
-  { name: 'Drama', href: '/', count: 203 },
-  { name: 'Horror', href: '/', count: 89 },
-  { name: 'Sci-Fi', href: '/', count: 112 },
-  { name: 'Comedy', href: '/', count: 178 },
-  { name: 'Thriller', href: '/', count: 95 },
-  { name: 'Romance', href: '/', count: 134 },
-  { name: 'Fantasy', href: '/', count: 77 },
-  { name: 'Animation', href: '/', count: 63 },
-  { name: 'Documentary', href: '/', count: 42 },
-  { name: 'Crime', href: '/', count: 88 },
-  { name: 'Adventure', href: '/', count: 121 },
-]
 
 export const navLinks = [
   { label: 'Home', href: '/' },

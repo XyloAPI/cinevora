@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { IconSearch, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
-import { navLinks, genres } from '@/data/movies'
+import { navLinks } from '@/data/movies'
+import { useGenres } from '@/hooks/useMovies'
 
 export default function Navbar() {
+  const { data: genres = [] } = useGenres()
   const [open, setOpen] = useState(false)
   const [genreOpen, setGenreOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -60,7 +62,7 @@ export default function Navbar() {
                 <div className="absolute top-full left-0 mt-1 w-44 bg-cinema-900 border border-white/[0.06] rounded-lg shadow-xl shadow-black/50 overflow-hidden">
                   <div className="p-1.5 max-h-64 overflow-y-auto">
                     {genres.map((g) => (
-                      <Link key={g.name} to="/"
+                      <Link key={g.name} to="/genres"
                         className="block px-3 py-1.5 text-[13px] text-white/50 hover:text-white hover:bg-white/[0.04] rounded transition-colors">
                         {g.name}
                       </Link>

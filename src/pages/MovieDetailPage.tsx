@@ -6,7 +6,7 @@ import { useMovieBySlug, useRelatedMovies } from '@/hooks/useMovies'
 import MovieRow from '@/components/sections/MovieRow'
 import SEO from '@/components/shared/SEO'
 import * as tmdb from '@/lib/tmdb'
-import { getDownloadUrl, getYoutubeEmbedUrl } from '@/lib/utils'
+import { getDownloadUrl } from '@/lib/utils'
 
 export default function MovieDetailPage() {
   const { slug = '' } = useParams<{ slug: string }>()
@@ -82,10 +82,10 @@ export default function MovieDetailPage() {
         <div className="absolute inset-0">
           <img src={movie.backdrop} alt="" fetchPriority="high" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-cinema-950 via-cinema-950/80 to-cinema-950/20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-cinema-950/95 via-cinema-950/60 to-transparent" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #0F0F0F 0%, #0F0F0F 35%, rgba(15, 15, 15, 0.95) 60%, rgba(15, 15, 15, 0.6) 80%, transparent 100%)' }} />
         </div>
 
-        <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 md:pb-12">
+        <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 md:pb-12 pt-20">
           <Link to="/" className="inline-flex items-center gap-1.5 text-[13px] text-white/40 hover:text-white transition-colors mb-4 sm:mb-6">
             <IconArrowLeft size={14} />
             Back

@@ -2,8 +2,22 @@ import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import { createClient } from '@libsql/client'
-import { genres } from '../data/movies'
 import type { Movie } from '../types'
+
+const genres = [
+  { name: 'Action', count: 156 },
+  { name: 'Drama', count: 203 },
+  { name: 'Horror', count: 89 },
+  { name: 'Sci-Fi', count: 112 },
+  { name: 'Comedy', count: 178 },
+  { name: 'Thriller', count: 95 },
+  { name: 'Romance', count: 134 },
+  { name: 'Fantasy', count: 77 },
+  { name: 'Animation', count: 63 },
+  { name: 'Documentary', count: 42 },
+  { name: 'Crime', count: 88 },
+  { name: 'Adventure', count: 121 },
+]
 
 // Fallback: re-create static movies for seeding
 const movies: Movie[] = []

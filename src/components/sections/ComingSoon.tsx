@@ -14,7 +14,7 @@ export default function ComingSoon({ movies: upcoming = [] }: ComingSoonProps) {
         <h2 className="text-base sm:text-lg font-bold">Coming Soon</h2>
       </div>
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(185px,1fr))] gap-3">
           {upcoming.map((movie, i) => (
             <MovieCard key={movie.id} movie={movie} compact grid fetchPriority={i < 6 ? 'high' : 'auto'} countdownDate={movie.releaseDate} />
           ))}

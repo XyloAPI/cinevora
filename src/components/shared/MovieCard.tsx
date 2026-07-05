@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { IconClock } from '@tabler/icons-react'
 import { formatDistanceToNow, format } from 'date-fns'
-import { slugify } from '@/lib/utils'
 import LazyImage from '@/components/shared/LazyImage'
 import type { Movie } from '@/types'
 
@@ -33,9 +32,9 @@ function QualityBadge({ quality }: { quality?: string }) {
 export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth, fetchPriority }: MovieCardProps) {
   if (compact) {
     return (
-      <Link to={`/movie/${slugify(movie.title)}`} className={`group ${fillWidth ? 'w-full' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
+      <Link to={`/movie/${movie.slug}`} className={`group block ${fillWidth ? 'w-full self-start' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
         <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
-          <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
+          <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
             <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute top-1.5 right-1.5">
@@ -44,7 +43,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
             {movie.rating > 0 && (
               <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 px-1 py-0.5 rounded bg-black/60 text-[11px] font-semibold text-yellow-400">
                 <span>&#9733;</span>
-                <span>{movie.rating}</span>
+                <span>{movie.rating.toFixed(1)}</span>
               </div>
             )}
             {countdownDate && (
@@ -77,7 +76,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
   }
 
   return (
-    <Link to={`/movie/${slugify(movie.title)}`} className="group block">
+    <Link to={`/movie/${movie.slug}`} className="group block">
       <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
         <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
           <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
@@ -86,7 +85,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
           <div className="absolute top-1.5 left-1.5 flex gap-1 flex-wrap">
             {movie.rating > 0 && (
               <span className="px-1.5 py-0.5 rounded bg-black/70 text-[11px] font-semibold text-yellow-400 flex items-center gap-0.5">
-                &#9733; {movie.rating}
+                &#9733; {movie.rating.toFixed(1)}
               </span>
             )}
             {movie.type === 'series' && (

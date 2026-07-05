@@ -62,12 +62,12 @@ export async function fetchTrendingMovies() {
 }
 
 export async function fetchLatestMovies() {
-  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE type = "movie" OR type IS NULL ORDER BY year DESC, title LIMIT 12')
+  const rows = await dbQuery<DbMovie>("SELECT * FROM movies WHERE type = 'movie' OR type IS NULL ORDER BY year DESC, title LIMIT 12")
   return rows.map(parseDbMovie)
 }
 
 export async function fetchSeries() {
-  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE type = "series" ORDER BY year DESC, title')
+  const rows = await dbQuery<DbMovie>("SELECT * FROM movies WHERE type = 'series' ORDER BY year DESC, title")
   return rows.map(parseDbMovie)
 }
 

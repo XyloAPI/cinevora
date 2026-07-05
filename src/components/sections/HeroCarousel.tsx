@@ -10,7 +10,7 @@ export default function HeroCarousel() {
   const { data: slides = [] } = useTrendingFromDb()
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 40 })
   const [selected, setSelected] = useState(0)
-  const [logos, setLogos] = useState<{ [key: number]: string | undefined }>({})
+  const [logos, setLogos] = useState<Record<string, string>>({})
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return
@@ -39,11 +39,11 @@ export default function HeroCarousel() {
   useEffect(() => {
     const current = slides[selected]
     if (!current?.tmdbId) return
-    if (logos[Number(current.id)]) return
+    if (logos[current.id]) return
     fetchLogo(current)
     // fetch next slide's logo too (preload)
     const next = slides[(selected + 1) % slides.length]
-    if (next?.tmdbId && !logos[Number(next.id)]) {
+    if (next?.tmdbId && !logos[next.id]) {
       setTimeout(() => fetchLogo(next), 2000)
     }
   }, [selected, slides, logos, fetchLogo])
@@ -57,7 +57,7 @@ export default function HeroCarousel() {
   if (!slides.length) return null
 
   return (
-    <section className="relative min-h-[80vh] pt-14">
+    <section className="relative min-h-[75vh] sm:min-h-[80vh] pt-14 flex flex-col justify-end">
       <div className="absolute inset-0 overflow-hidden" ref={emblaRef}>
         <div className="flex h-full">
           {slides.map((movie, i) => (
@@ -75,9 +75,9 @@ export default function HeroCarousel() {
         </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 md:pb-20 h-[80vh] flex flex-col justify-end">
+      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 md:pb-20 flex-1 flex flex-col justify-end pt-20">
         {slides.map((movie, i) => {
-          const logoUrl = movie.logoUrl || logos[Number(movie.id)]
+          const logoUrl = movie.logoUrl || logos[movie.id]
           return (
             <div key={movie.id} className={`transition-opacity duration-500 ${i === selected ? 'opacity-100' : 'opacity-0 absolute pointer-events-none'}`}>
               {i === selected && (
@@ -86,7 +86,7 @@ export default function HeroCarousel() {
                     <span className="px-2 py-0.5 bg-cinema-red text-white text-[10px] font-semibold uppercase tracking-wider rounded-sm">
                       #{movie.trendingRank || i + 1} Trending
                     </span>
-                    <span className="text-sm text-yellow-400 font-medium">&#9733; {movie.rating}/10</span>
+                    <span className="text-sm text-yellow-400 font-medium">&#9733; {movie.rating.toFixed(1)}/10</span>
                     <span className="text-sm text-white/40">{movie.year}</span>
                     <span className="text-xs text-white/30 px-1.5 py-0.5 border border-white/10 rounded">{movie.quality}</span>
                   </div>

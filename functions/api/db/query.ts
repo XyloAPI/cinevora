@@ -25,7 +25,14 @@ export async function onRequest(context) {
     })
 
     const data = await resp.json()
-    const rows = data.results?.[0]?.response?.result?.rows || []
+    const result = data.results?.[0]?.response?.result
+    const cols: { name: string }[] = result?.cols || []
+    const rawRows: { type: string; value: any }[][] = result?.rows || []
+
+    // Map array-of-arrays to array-of-objects using column names
+    const rows = rawRows.map((row) =>
+      Object.fromEntries(cols.map((col, i) => [col.name, row[i]?.value ?? null]))
+    )
 
     return new Response(JSON.stringify({ rows }), {
       status: 200,
