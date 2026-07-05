@@ -147,7 +147,7 @@ app.post('/api/admin/login', (req: any, res: any) => {
     if (username === expectedUser && password === expectedPass) {
       const token = crypto
         .createHash('sha256')
-        .update(expectedUser + expectedPass + 'salt123')
+        .update(expectedPass)
         .digest('hex')
       return res.json({ success: true, token })
     }
