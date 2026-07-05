@@ -1,105 +1,148 @@
 import express from 'express'
+import type { Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { createClient } from '@libsql/client'
 
-dotenv.config({ path: '.env.server' })
+dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-const db = createClient({
-  url: process.env.VITE_TURSO_DATABASE_URL!,
-  authToken: process.env.VITE_TURSO_AUTH_TOKEN!,
-})
-
 app.use(cors())
 app.use(express.json())
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' })
-})
+const TMDB_BASE = 'https://api.themoviedb.org/3'
+const TMDB_TOKEN = process.env.TMDB_READ_ACCESS_TOKEN
 
-// Proxy TMDB requests
-app.get('/api/tmdb/*', async (req, res) => {
+// TMDB API routes
+app.get('/api/tmdb/trending/:time_window', async (req: any, res: any) => {
   try {
-    const endpoint = req.params[0] as string
-    const url = `https://api.themoviedb.org/3/${endpoint}`
+    const { time_window } = req.params
+    const url = `${TMDB_BASE}/trending/all/${time_window}?language=id-ID`
     const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${process.env.VITE_TMDB_READ_ACCESS_TOKEN}`,
-      },
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
     })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
     const data = await response.json()
     res.json(data)
   } catch (error) {
-    res.status(500).json({ error: 'TMDB API error' })
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 
-// Proxy database queries
-app.get('/api/movies', async (req, res) => {
+app.get('/api/tmdb/search/movie', async (req: any, res: any) => {
   try {
-    const result = await db.execute('SELECT * FROM movies ORDER BY created_at DESC')
-    res.json(result.rows)
+    const { query, page = 1 } = req.query
+    const url = `${TMDB_BASE}/search/movie?query=${encodeURIComponent(query as string)}&page=${page}&language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
   } catch (error) {
-    res.status(500).json({ error: 'Database error' })
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 
-app.get('/api/movies/:slug', async (req, res) => {
+app.get('/api/tmdb/movie/:id', async (req: any, res: any) => {
   try {
-    const result = await db.execute('SELECT * FROM movies WHERE slug = ?', [req.params.slug])
-    res.json(result.rows[0] || null)
+    const { id } = req.params
+    const url = `${TMDB_BASE}/movie/${id}?language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
   } catch (error) {
-    res.status(500).json({ error: 'Database error' })
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 
-app.post('/api/movies', async (req, res) => {
+app.get('/api/tmdb/movie/:id/credits', async (req: any, res: any) => {
   try {
-    const { id, ...data } = req.body
-    const fields = Object.keys(data)
-    const values = Object.values(data)
-    const placeholders = fields.map(() => '?').join(', ')
-    
-    await db.execute(
-      `INSERT INTO movies (id, ${fields.join(', ')}) VALUES (?, ${placeholders})`,
-      [id, ...values]
-    )
-    res.json({ success: true })
+    const { id } = req.params
+    const url = `${TMDB_BASE}/movie/${id}/credits?language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
   } catch (error) {
-    res.status(500).json({ error: 'Database error' })
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 
-app.put('/api/movies/:id', async (req, res) => {
+app.get('/api/tmdb/movie/:id/videos', async (req: any, res: any) => {
   try {
-    const data = req.body as Record<string, any>
-    const fields = Object.keys(data)
-    const values = Object.values(data).map((v) => v ?? null)
-    const setClause = fields.map((f) => `${f} = ?`).join(', ')
-    
-    await db.execute(
-      `UPDATE movies SET ${setClause} WHERE id = ?`,
-      [...values, req.params.id]
-    )
-    res.json({ success: true })
+    const { id } = req.params
+    const url = `${TMDB_BASE}/movie/${id}/videos?language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
   } catch (error) {
-    res.status(500).json({ error: 'Database error' })
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 
-app.delete('/api/movies/:id', async (req, res) => {
+app.get('/api/tmdb/movie/:id/images', async (req: any, res: any) => {
   try {
-    await db.execute('DELETE FROM movies WHERE id = ?', [req.params.id])
-    res.json({ success: true })
+    const { id } = req.params
+    const url = `${TMDB_BASE}/movie/${id}/images?include_image_logos=true`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
   } catch (error) {
-    res.status(500).json({ error: 'Database error' })
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
+})
+
+app.get('/api/tmdb/genre/movie/list', async (req: any, res: any) => {
+  try {
+    const url = `${TMDB_BASE}/genre/movie/list?language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+// Turso proxy (passthrough untuk queries yang aman)
+app.post('/api/db/query', async (req: any, res: any) => {
+  try {
+    const { sql, params = [] } = req.body
+    const { createClient } = await import('@libsql/client')
+    const db = createClient({
+      url: process.env.TURSO_DATABASE_URL!,
+      authToken: process.env.TURSO_AUTH_TOKEN!,
+    })
+    const result = await db.execute({ sql, args: params })
+    res.json({ rows: result.rows })
+    db.close()
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Database error' })
+  }
+})
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
+  console.log(`Backend server running on http://localhost:${PORT}`)
+  console.log(`TMDB API proxy: http://localhost:${PORT}/api/tmdb/...`)
+  console.log(`Database proxy: http://localhost:${PORT}/api/db/query`)
 })

@@ -1,21 +1,16 @@
-import { createClient } from '@libsql/client'
 import { slugify } from './utils'
 
-let client: ReturnType<typeof createClient> | null = null
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
-function getDb() {
-  if (client) return client
-
-  const url = import.meta.env.VITE_TURSO_DATABASE_URL
-  const token = import.meta.env.VITE_TURSO_AUTH_TOKEN
-
-  if (!url) return null
-
-  client = createClient({
-    url,
-    authToken: token,
+async function dbQuery<T>(sql: string, params?: any[]): Promise<T[]> {
+  const res = await fetch(`${API_BASE}/db/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql, params }),
   })
-  return client
+  if (!res.ok) throw new Error(`DB error: ${res.statusText}`)
+  const data = await res.json()
+  return data.rows || []
 }
 
 export interface DbMovie {
@@ -56,261 +51,224 @@ export interface DbMovie {
   status: string | null
 }
 
-const NEW_COLUMNS: [string, string][] = [
-  ['tmdb_id', 'INTEGER'],
-  ['imdb_id', 'TEXT'],
-  ['tagline', 'TEXT'],
-  ['runtime', 'INTEGER'],
-  ['budget', 'INTEGER'],
-  ['revenue', 'INTEGER'],
-  ['original_language', 'TEXT'],
-  ['popularity', 'REAL'],
-  ['vote_count', 'INTEGER'],
-  ['homepage', 'TEXT'],
-  ['director', 'TEXT'],
-  ['slug', 'TEXT'],
-  ['cast', 'TEXT'],
-  ['logo_url', 'TEXT'],
-  ['trailer_url', 'TEXT'],
-  ['stream_url', 'TEXT'],
-  ['production_companies', 'TEXT'],
-  ['status', 'TEXT'],
-]
-
-export async function runMigration() {
-  const db = getDb()
-  if (!db) return false
-  for (const [col, type] of NEW_COLUMNS) {
-    try {
-      await db.execute(`ALTER TABLE movies ADD COLUMN ${col} ${type}`)
-    } catch {
-      // column already exists
-    }
-  }
-  return true
-}
-
-function mapMovie(m: DbMovie) {
-  return {
-    id: m.id,
-    slug: m.slug,
-    title: m.title,
-    year: m.year,
-    rating: m.rating,
-    genre: JSON.parse(m.genre) as string[],
-    poster: m.poster,
-    backdrop: m.backdrop,
-    synopsis: m.synopsis,
-    isTrending: Boolean(m.is_trending),
-    isFeatured: Boolean(m.is_featured),
-    comingSoon: Boolean(m.coming_soon),
-    releaseDate: m.release_date ?? undefined,
-    quality: m.quality ?? undefined,
-    duration: m.duration ?? undefined,
-    type: (m.type ?? undefined) as 'movie' | 'series' | undefined,
-    episodes: m.episodes ?? undefined,
-    seasons: m.seasons ?? undefined,
-    tmdbId: m.tmdb_id ?? undefined,
-    imdbId: m.imdb_id ?? undefined,
-    tagline: m.tagline ?? undefined,
-    runtime: m.runtime ?? undefined,
-    budget: m.budget ?? undefined,
-    revenue: m.revenue ?? undefined,
-    originalLanguage: m.original_language ?? undefined,
-    popularity: m.popularity ?? undefined,
-    voteCount: m.vote_count ?? undefined,
-    homepage: m.homepage ?? undefined,
-    director: m.director ?? undefined,
-    cast: m.cast ? (JSON.parse(m.cast) as string[]) : undefined,
-    logoUrl: m.logo_url ?? undefined,
-    trailerUrl: m.trailer_url ?? undefined,
-    streamUrl: m.stream_url ?? undefined,
-    productionCompanies: m.production_companies ? (JSON.parse(m.production_companies) as string[]) : undefined,
-    status: m.status ?? undefined,
-  }
-}
-
-const MOVIE_COLUMNS = `
-  "id", "slug", "title", "year", "rating", "genre", "poster", "backdrop", "synopsis",
-  "is_trending", "is_featured", "coming_soon", "release_date", "quality", "duration", "type", "episodes", "seasons",
-  "tmdb_id", "imdb_id", "tagline", "runtime", "budget", "revenue", "original_language",
-  "popularity", "vote_count", "homepage", "director", "cast", "logo_url", "trailer_url", "stream_url",
-  "production_companies", "status"
-`
-
-const MOVIE_PARAMS = new Array(35).fill('?').join(', ')
-
 export async function fetchAllMovies() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`SELECT ${MOVIE_COLUMNS} FROM movies ORDER BY year DESC, title ASC`)
-  return res.rows.map((r) => mapMovie(r as unknown as DbMovie))
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies ORDER BY year DESC, title')
+  return rows.map(parseDbMovie)
 }
 
 export async function fetchTrendingMovies() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`SELECT ${MOVIE_COLUMNS} FROM movies WHERE is_trending = 1 AND type = 'movie'`)
-  return res.rows.map((r) => mapMovie(r as unknown as DbMovie))
-}
-
-export async function fetchSeries() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`SELECT ${MOVIE_COLUMNS} FROM movies WHERE type = 'series'`)
-  return res.rows.map((r) => mapMovie(r as unknown as DbMovie))
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE is_trending = 1 ORDER BY year DESC, title LIMIT 10')
+  return rows.map(parseDbMovie)
 }
 
 export async function fetchLatestMovies() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`SELECT ${MOVIE_COLUMNS} FROM movies WHERE (type = 'movie' OR type IS NULL) AND is_featured = 0`)
-  return res.rows.map((r) => mapMovie(r as unknown as DbMovie))
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE type = "movie" OR type IS NULL ORDER BY year DESC, title LIMIT 12')
+  return rows.map(parseDbMovie)
+}
+
+export async function fetchSeries() {
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE type = "series" ORDER BY year DESC, title')
+  return rows.map(parseDbMovie)
 }
 
 export async function fetchComingSoon() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`SELECT ${MOVIE_COLUMNS} FROM movies WHERE coming_soon = 1`)
-  return res.rows.map((r) => mapMovie(r as unknown as DbMovie))
-}
-
-export async function fetchMovieBySlug(slug: string) {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute({
-    sql: `SELECT ${MOVIE_COLUMNS} FROM movies WHERE "slug" = ?`,
-    args: [slug],
-  })
-  if (!res.rows.length) {
-    const fallback = await db.execute({
-      sql: `SELECT ${MOVIE_COLUMNS} FROM movies WHERE LOWER(REPLACE(title, ' ', '-')) = ? LIMIT 1`,
-      args: [slug],
-    })
-    if (!fallback.rows.length) return null
-    return mapMovie(fallback.rows[0] as unknown as DbMovie)
-  }
-  return mapMovie(res.rows[0] as unknown as DbMovie)
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE coming_soon = 1 ORDER BY release_date')
+  return rows.map(parseDbMovie)
 }
 
 export async function fetchFeaturedMovie() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`SELECT ${MOVIE_COLUMNS} FROM movies WHERE is_featured = 1 LIMIT 1`)
-  if (!res.rows.length) return null
-  return mapMovie(res.rows[0] as unknown as DbMovie)
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE is_featured = 1 LIMIT 1')
+  return rows.length ? parseDbMovie(rows[0]) : null
 }
 
-export async function fetchMovieByTmdbId(tmdbId: number) {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute({
-    sql: `SELECT ${MOVIE_COLUMNS} FROM movies WHERE tmdb_id = ? LIMIT 1`,
-    args: [tmdbId],
-  })
-  if (!res.rows.length) return null
-  return mapMovie(res.rows[0] as unknown as DbMovie)
-}
-
-type MovieInsert = Omit<DbMovie, 'id'> & { id?: string }
-
-function movieToRow(movie: MovieInsert) {
-  return [
-    movie.id || String(Date.now()),
-    movie.slug || slugify(movie.title || ''),
-    movie.title, movie.year, movie.rating, movie.genre,
-    movie.poster, movie.backdrop, movie.synopsis,
-    movie.is_trending, movie.is_featured, movie.coming_soon,
-    movie.release_date, movie.quality, movie.duration, movie.type,
-    movie.episodes, movie.seasons,
-    movie.tmdb_id, movie.imdb_id, movie.tagline, movie.runtime,
-    movie.budget, movie.revenue, movie.original_language,
-    movie.popularity, movie.vote_count, movie.homepage,
-    movie.director, movie.cast, movie.logo_url, movie.trailer_url, movie.stream_url,
-    movie.production_companies, movie.status,
-  ]
-}
-
-export async function addMovie(movie: MovieInsert) {
-  const db = getDb()
-  if (!db) return null
-  const id = movie.id || String(Date.now())
-  await db.execute({
-    sql: `INSERT INTO movies (${MOVIE_COLUMNS}) VALUES (${MOVIE_PARAMS})`,
-    args: movieToRow({ ...movie, id, slug: movie.slug || slugify(movie.title || '') }) as any,
-  })
-  return id
-}
-
-export async function upsertMovie(movie: MovieInsert & { tmdb_id: number }) {
-  const db = getDb()
-  if (!db) return null
-  const existing = movie.tmdb_id ? await fetchMovieByTmdbId(movie.tmdb_id) : null
-  if (existing) {
-    const { id: _id, tmdb_id: _tmdb, ...updateFields } = movie
-    await updateMovie(existing.id, { ...updateFields, slug: movie.slug || slugify(movie.title || '') })
-    return existing.id
-  }
-  return addMovie({ ...movie, slug: movie.slug || slugify(movie.title || '') })
-}
-
-const SKIP_UPDATE_KEYS = new Set(['id'])
-
-export async function updateMovie(id: string, fields: Record<string, unknown>) {
-  const db = getDb()
-  if (!db) return false
-  const setClauses: string[] = []
-  const values: (string | number | null)[] = []
-  for (const [key, value] of Object.entries(fields)) {
-    if (SKIP_UPDATE_KEYS.has(key)) continue
-    setClauses.push(`"${key}" = ?`)
-    values.push(value != null ? (value as string | number) : null)
-  }
-  if (!setClauses.length) return false
-  values.push(id)
-  await db.execute({
-    sql: `UPDATE movies SET ${setClauses.join(', ')} WHERE id = ?`,
-    args: values,
-  })
-  return true
-}
-
-export async function deleteMovie(id: string) {
-  const db = getDb()
-  if (!db) return false
-  await db.execute({ sql: 'DELETE FROM movies WHERE id = ?', args: [id] })
-  return true
-}
-
-export async function backfillSlugs() {
-  const db = getDb()
-  if (!db) return 0
-  const res = await db.execute(`SELECT id, title, "slug" FROM movies`)
-  let updated = 0
-  for (const row of res.rows) {
-    const id = row.id as string
-    const title = row.title as string
-    const existingSlug = (row as any).slug as string | null
-    const computed = slugify(title)
-    if (!existingSlug || existingSlug !== computed) {
-      await db.execute({ sql: `UPDATE movies SET "slug" = ? WHERE id = ?`, args: [computed, id] })
-      updated++
-    }
-  }
-  return updated
+export async function fetchMovieBySlug(slug: string) {
+  const rows = await dbQuery<DbMovie>('SELECT * FROM movies WHERE slug = ?', [slug])
+  return rows.length ? parseDbMovie(rows[0]) : null
 }
 
 export async function getGenres() {
-  const db = getDb()
-  if (!db) return null
-  const res = await db.execute(`
-    SELECT genre, COUNT(*) as count FROM (
-      SELECT json_each.value as genre FROM movies, json_each(movies.genre)
-    ) GROUP BY genre ORDER BY genre ASC
-  `)
-  return res.rows.map((r) => ({
-    name: r.genre as string,
-    count: Number(r.count),
-    href: `/genres/${String(r.genre).toLowerCase().replace(/\s+/g, '-')}`,
+  const rows = await dbQuery<{ genre: string }>('SELECT DISTINCT genre FROM movies')
+  const genreMap = new Map<string, number>()
+  rows.forEach((row) => {
+    const genres = JSON.parse(row.genre)
+    genres.forEach((g: string) => {
+      genreMap.set(g, (genreMap.get(g) || 0) + 1)
+    })
+  })
+  return Array.from(genreMap.entries()).map(([name, count]) => ({
+    name,
+    count,
+    href: '/',
   }))
+}
+
+function parseDbMovie(row: DbMovie) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    year: row.year,
+    rating: row.rating,
+    genre: JSON.parse(row.genre),
+    poster: row.poster,
+    backdrop: row.backdrop,
+    synopsis: row.synopsis,
+    isTrending: !!row.is_trending,
+    isFeatured: !!row.is_featured,
+    comingSoon: !!row.coming_soon,
+    releaseDate: row.release_date || undefined,
+    quality: row.quality || undefined,
+    duration: row.duration || undefined,
+    type: (row.type as 'movie' | 'series') || 'movie',
+    episodes: row.episodes || undefined,
+    seasons: row.seasons || undefined,
+    tmdbId: row.tmdb_id || undefined,
+    imdbId: row.imdb_id || undefined,
+    tagline: row.tagline || undefined,
+    runtime: row.runtime || undefined,
+    budget: row.budget || undefined,
+    revenue: row.revenue || undefined,
+    originalLanguage: row.original_language || undefined,
+    popularity: row.popularity || undefined,
+    voteCount: row.vote_count || undefined,
+    homepage: row.homepage || undefined,
+    director: row.director || undefined,
+    cast: row.cast ? JSON.parse(row.cast) : undefined,
+    logoUrl: row.logo_url || undefined,
+    trailerUrl: row.trailer_url || undefined,
+    streamUrl: row.stream_url || undefined,
+    productionCompanies: row.production_companies ? JSON.parse(row.production_companies) : undefined,
+    status: row.status || undefined,
+  }
+}
+
+export async function addMovie(movie: Omit<DbMovie, 'id'> & { id: string }) {
+  const sql = `INSERT INTO movies (
+    id, slug, title, year, rating, genre, poster, backdrop, synopsis,
+    is_trending, is_featured, coming_soon, release_date, quality, duration, type,
+    episodes, seasons, tmdb_id, imdb_id, tagline, runtime, budget, revenue,
+    original_language, popularity, vote_count, homepage, director, cast,
+    logo_url, trailer_url, stream_url, production_companies, status
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  await dbQuery(sql, [
+    movie.id,
+    movie.slug,
+    movie.title,
+    movie.year,
+    movie.rating,
+    movie.genre,
+    movie.poster,
+    movie.backdrop,
+    movie.synopsis,
+    movie.is_trending,
+    movie.is_featured,
+    movie.coming_soon,
+    movie.release_date,
+    movie.quality,
+    movie.duration,
+    movie.type,
+    movie.episodes,
+    movie.seasons,
+    movie.tmdb_id,
+    movie.imdb_id,
+    movie.tagline,
+    movie.runtime,
+    movie.budget,
+    movie.revenue,
+    movie.original_language,
+    movie.popularity,
+    movie.vote_count,
+    movie.homepage,
+    movie.director,
+    movie.cast,
+    movie.logo_url,
+    movie.trailer_url,
+    movie.stream_url,
+    movie.production_companies,
+    movie.status,
+  ])
+}
+
+export async function updateMovie(id: string, movie: Partial<DbMovie>) {
+  const fields: string[] = []
+  const values: any[] = []
+  
+  const allowedFields = ['slug', 'title', 'year', 'rating', 'genre', 'poster', 'backdrop', 'synopsis', 'is_trending', 'is_featured', 'coming_soon', 'release_date', 'quality', 'duration', 'type', 'episodes', 'seasons', 'tmdb_id', 'imdb_id', 'tagline', 'runtime', 'budget', 'revenue', 'original_language', 'popularity', 'vote_count', 'homepage', 'director', 'cast', 'logo_url', 'trailer_url', 'stream_url', 'production_companies', 'status']
+  
+  for (const key of allowedFields) {
+    if (key in movie && movie[key as keyof typeof movie] !== undefined) {
+      fields.push(`${key} = ?`)
+      values.push(movie[key as keyof typeof movie])
+    }
+  }
+  
+  if (fields.length === 0) return
+  values.push(id)
+  
+  const sql = `UPDATE movies SET ${fields.join(', ')} WHERE id = ?`
+  await dbQuery(sql, values)
+}
+
+export async function deleteMovie(id: string) {
+  await dbQuery('DELETE FROM movies WHERE id = ?', [id])
+}
+
+export async function upsertMovie(movie: DbMovie) {
+  const existing = await dbQuery<DbMovie>('SELECT id FROM movies WHERE tmdb_id = ?', [movie.tmdb_id])
+  if (existing.length) {
+    await updateMovie(existing[0].id, movie)
+  } else {
+    await addMovie(movie as any)
+  }
+}
+
+export async function runMigration() {
+  await dbQuery(`CREATE TABLE IF NOT EXISTS movies (
+    id TEXT PRIMARY KEY,
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    year INTEGER NOT NULL,
+    rating REAL NOT NULL,
+    genre TEXT NOT NULL,
+    poster TEXT NOT NULL,
+    backdrop TEXT NOT NULL,
+    synopsis TEXT NOT NULL,
+    is_trending INTEGER DEFAULT 0,
+    is_featured INTEGER DEFAULT 0,
+    coming_soon INTEGER DEFAULT 0,
+    release_date TEXT,
+    quality TEXT,
+    duration TEXT,
+    type TEXT,
+    episodes INTEGER,
+    seasons INTEGER,
+    tmdb_id INTEGER,
+    imdb_id TEXT,
+    tagline TEXT,
+    runtime INTEGER,
+    budget INTEGER,
+    revenue INTEGER,
+    original_language TEXT,
+    popularity REAL,
+    vote_count INTEGER,
+    homepage TEXT,
+    director TEXT,
+    cast TEXT,
+    logo_url TEXT,
+    trailer_url TEXT,
+    stream_url TEXT,
+    production_companies TEXT,
+    status TEXT
+  )`)
+}
+
+export async function backfillSlugs() {
+  const rows = await dbQuery<DbMovie>('SELECT id, title FROM movies WHERE slug IS NULL')
+  let count = 0
+  for (const row of rows) {
+    const slug = slugify(row.title)
+    await dbQuery('UPDATE movies SET slug = ? WHERE id = ?', [slug, row.id])
+    count++
+  }
+  return count
 }

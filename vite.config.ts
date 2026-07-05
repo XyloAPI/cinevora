@@ -43,4 +43,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api/turso': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/tmdb': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
+  },
 })

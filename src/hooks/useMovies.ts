@@ -59,7 +59,7 @@ export function useRelatedMovies(movie: Movie | null) {
       if (!movie) return [] as Movie[]
       try {
         const all = (await db.fetchAllMovies()) ?? []
-        return all.filter((m) => m.id !== movie.id && m.genre.some((g) => movie.genre.includes(g))).slice(0, 10)
+        return all.filter((m) => m.id !== movie.id && m.genre.some((g: string) => movie.genre.includes(g))).slice(0, 10)
       } catch {
         return [] as Movie[]
       }

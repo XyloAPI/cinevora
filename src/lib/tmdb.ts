@@ -1,95 +1,47 @@
 import type { TmdbMovieResult, TmdbMovieDetail, TmdbVideo, TmdbCredit, TmdbGenre } from '@/types'
 
-const TOKEN = import.meta.env.VITE_TMDB_READ_ACCESS_TOKEN
-const BASE = 'https://api.themoviedb.org/3'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const IMG_BASE = 'https://image.tmdb.org/t/p'
 
-const headers = {
-  Authorization: `Bearer ${TOKEN}`,
-  'Content-Type': 'application/json',
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
+  return res.json()
 }
 
 const genreCache = new Map<number, string>()
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers })
-  if (!res.ok) throw new Error(`TMDB ${res.status}: ${res.statusText}`)
-  return res.json()
-}
-
-function imgPath(path: string | null, size: string = 'w500'): string {
-  return path ? `${IMG_BASE}/${size}${path}` : ''
-}
-
-function imgOriginal(path: string | null): string {
-  return path ? `${IMG_BASE}/original${path}` : ''
-}
-
 export async function fetchGenres(): Promise<TmdbGenre[]> {
-  const data = await fetchJson<{ genres: TmdbGenre[] }>(`${BASE}/genre/movie/list?language=en-US`)
+  const data = await fetchJson<{ genres: TmdbGenre[] }>(`${API_BASE}/tmdb/genre/movie/list`)
   for (const g of data.genres) genreCache.set(g.id, g.name)
   return data.genres
 }
 
-async function getGenreName(id: number): Promise<string> {
-  if (genreCache.has(id)) return genreCache.get(id)!
-  await fetchGenres()
-  return genreCache.get(id) || 'Unknown'
-}
-
 export async function searchMovies(query: string, page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
-  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number; total_pages: number }>(
-    `${BASE}/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=${page}&include_adult=false`
+  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number }>(
+    `${API_BASE}/tmdb/search/movie?query=${encodeURIComponent(query)}&page=${page}`
   )
   return { results: data.results, total: data.total_results, page: data.page }
 }
 
 export async function getTrending(timeWindow: 'day' | 'week' = 'week', page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
-  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number; total_pages: number }>(
-    `${BASE}/trending/movie/${timeWindow}?language=id-ID&page=${page}`
-  )
-  return { results: data.results, total: data.total_results, page: data.page }
-}
-
-export async function getPopular(page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
-  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number; total_pages: number }>(
-    `${BASE}/movie/popular?language=en-US&page=${page}`
-  )
-  return { results: data.results, total: data.total_results, page: data.page }
-}
-
-export async function getNowPlaying(page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
-  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number; total_pages: number }>(
-    `${BASE}/movie/now_playing?language=en-US&page=${page}`
-  )
-  return { results: data.results, total: data.total_results, page: data.page }
-}
-
-export async function getUpcoming(page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
-  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number; total_pages: number }>(
-    `${BASE}/movie/upcoming?language=en-US&page=${page}`
-  )
-  return { results: data.results, total: data.total_results, page: data.page }
-}
-
-export async function getTopRated(page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
-  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number; total_pages: number }>(
-    `${BASE}/movie/top_rated?language=en-US&page=${page}`
+  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number }>(
+    `${API_BASE}/tmdb/trending/${timeWindow}`
   )
   return { results: data.results, total: data.total_results, page: data.page }
 }
 
 export async function getMovieDetail(tmdbId: number): Promise<TmdbMovieDetail> {
-  return fetchJson<TmdbMovieDetail>(`${BASE}/movie/${tmdbId}?language=en-US&append_to_response=`)
+  return fetchJson<TmdbMovieDetail>(`${API_BASE}/tmdb/movie/${tmdbId}`)
 }
 
 export async function getMovieVideos(tmdbId: number): Promise<TmdbVideo[]> {
-  const data = await fetchJson<{ results: TmdbVideo[] }>(`${BASE}/movie/${tmdbId}/videos?language=en-US`)
+  const data = await fetchJson<{ results: TmdbVideo[] }>(`${API_BASE}/tmdb/movie/${tmdbId}/videos`)
   return data.results
 }
 
 export async function getMovieCredits(tmdbId: number): Promise<TmdbCredit> {
-  return fetchJson<TmdbCredit>(`${BASE}/movie/${tmdbId}/credits?language=en-US`)
+  return fetchJson<TmdbCredit>(`${API_BASE}/tmdb/movie/${tmdbId}/credits`)
 }
 
 export interface TmdbLogo {
@@ -101,7 +53,7 @@ export interface TmdbLogo {
 }
 
 export async function fetchMovieImages(tmdbId: number): Promise<{ logos: TmdbLogo[] }> {
-  const data = await fetchJson<{ logos: TmdbLogo[] }>(`${BASE}/movie/${tmdbId}/images?include_image_language=en,null`)
+  const data = await fetchJson<{ logos: TmdbLogo[] }>(`${API_BASE}/tmdb/movie/${tmdbId}/images`)
   return { logos: data.logos }
 }
 
@@ -119,10 +71,6 @@ export function castWithPhotos(credits: TmdbCredit, limit: number = 12) {
   }))
 }
 
-export function companyLogoUrl(logoPath: string | null): string | undefined {
-  return logoPath ? `https://image.tmdb.org/t/p/w200${logoPath}` : undefined
-}
-
 export function trailerUrl(videos: TmdbVideo[]): string | undefined {
   const trailer = videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube' && v.official)
     || videos.find((v) => v.type === 'Trailer' && v.site === 'YouTube')
@@ -131,10 +79,6 @@ export function trailerUrl(videos: TmdbVideo[]): string | undefined {
 
 export function getDirector(credits: TmdbCredit): string | undefined {
   return credits.crew.find((c) => c.job === 'Director')?.name
-}
-
-export function getCast(credits: TmdbCredit, limit: number = 10): string[] {
-  return credits.cast.slice(0, limit).map((c) => c.name)
 }
 
 export async function enrichMovie(tmdbId: number): Promise<{
@@ -223,4 +167,16 @@ export function mapTmdbToMovie(
     isFeatured: false,
     comingSoon: false,
   }
+}
+
+function imgPath(path: string | null, size: string = 'w500'): string {
+  return path ? `${IMG_BASE}/${size}${path}` : ''
+}
+
+function imgOriginal(path: string | null): string {
+  return path ? `${IMG_BASE}/original${path}` : ''
+}
+
+function getCast(credits: TmdbCredit, limit: number = 10): string[] {
+  return credits.cast.slice(0, limit).map((c) => c.name)
 }
