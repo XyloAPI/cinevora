@@ -88,10 +88,10 @@ export function useTrendingFromDb() {
           const trending = await tmdbModule.getTrending('week', 1)
           if (trending && trending.results && trending.results.length > 0) {
             const trendingOrder = new Map(trending.results.map((r: { id: number }, idx: number) => [r.id, idx + 1]))
-            const filtered = all.filter((m) => m.tmdbId && trendingOrder.has(m.tmdbId))
+            const filtered = all.filter((m) => m.tmdbId && trendingOrder.has(Number(m.tmdbId)))
             if (filtered.length > 0) {
-              filtered.sort((a, b) => (trendingOrder.get(a.tmdbId!) || 999) - (trendingOrder.get(b.tmdbId!) || 999))
-              return filtered.map((m) => ({ ...m, trendingRank: trendingOrder.get(m.tmdbId!) }))
+              filtered.sort((a, b) => (trendingOrder.get(Number(a.tmdbId)) || 999) - (trendingOrder.get(Number(b.tmdbId)) || 999))
+              return filtered.map((m) => ({ ...m, trendingRank: trendingOrder.get(Number(m.tmdbId)) }))
             }
           }
         } catch (e) {

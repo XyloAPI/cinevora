@@ -71,7 +71,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
 }
 
 export default function AdminPanel() {
-  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('admin_auth'))
+  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('admin_auth') && !!sessionStorage.getItem('admin_token'))
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = (searchParams.get('tab') as Tab) || 'dashboard'
   const setTab = useCallback((t: Tab) => {
