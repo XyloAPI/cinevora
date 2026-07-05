@@ -162,45 +162,48 @@ export default function AdminPanel() {
       const mapped = tmdb.mapTmdbToMovie(detail, videos, credits, genreNames)
       const { logos } = await tmdb.fetchMovieImages(tmdbId)
       const logoUrl = tmdb.logoUrl(logos)
-      await upsertMovie({
+      // Open edit form with prefilled data instead of directly saving
+      setSynopsisText(mapped.synopsis || '')
+      setSynopsisTranslated(false)
+      setEditingMovie({
         id: `tmdb-${detail.id}`,
         slug: slugify(mapped.title),
         title: mapped.title,
         year: mapped.year,
         rating: mapped.rating,
-        genre: JSON.stringify(mapped.genre),
+        genre: mapped.genre,
         poster: mapped.poster,
         backdrop: mapped.backdrop,
         synopsis: mapped.synopsis,
-        is_trending: mapped.isTrending ? 1 : 0,
-        is_featured: mapped.isFeatured ? 1 : 0,
-        coming_soon: mapped.comingSoon ? 1 : 0,
-        release_date: mapped.releaseDate || null,
-        quality: null,
-        duration: mapped.duration,
-        type: 'movie',
-        episodes: null,
-        seasons: null,
-        tmdb_id: mapped.tmdbId,
-        imdb_id: mapped.imdbId || null,
-        tagline: mapped.tagline || null,
-        runtime: mapped.runtime,
-        budget: mapped.budget || 0,
-        revenue: mapped.revenue || 0,
-        original_language: mapped.originalLanguage || null,
-        popularity: mapped.popularity,
-        vote_count: mapped.voteCount,
-        homepage: mapped.homepage || null,
-        director: mapped.director || null,
-        cast: mapped.cast?.length ? JSON.stringify(mapped.cast) : null,
-        logo_url: logoUrl || null,
-        trailer_url: mapped.trailerUrl || null,
-        stream_url: null,
-        production_companies: mapped.productionCompanies?.length ? JSON.stringify(mapped.productionCompanies) : null,
-        status: mapped.status || null,
+        isTrending: mapped.isTrending,
+        isFeatured: mapped.isFeatured,
+        comingSoon: mapped.comingSoon,
+        releaseDate: mapped.releaseDate || undefined,
+        quality: undefined,
+        duration: mapped.duration || undefined,
+        type: 'movie' as const,
+        episodes: undefined,
+        seasons: undefined,
+        tmdbId: mapped.tmdbId,
+        imdbId: mapped.imdbId || undefined,
+        tagline: mapped.tagline || undefined,
+        runtime: mapped.runtime || undefined,
+        budget: mapped.budget || undefined,
+        revenue: mapped.revenue || undefined,
+        originalLanguage: mapped.originalLanguage || undefined,
+        popularity: mapped.popularity || undefined,
+        voteCount: mapped.voteCount || undefined,
+        homepage: mapped.homepage || undefined,
+        director: mapped.director || undefined,
+        cast: mapped.cast,
+        logoUrl: logoUrl || undefined,
+        trailerUrl: mapped.trailerUrl || undefined,
+        streamUrl: undefined,
+        productionCompanies: mapped.productionCompanies,
+        status: mapped.status || undefined,
       })
-      toast.success(`Imported "${mapped.title}"`)
-      refetch()
+      setFormKey((k) => k + 1)
+      toast.info(`Editing "${mapped.title}" - review before saving`)
     } catch (err) {
       toast.error(`Import failed: ${(err as Error).message}`)
     } finally {

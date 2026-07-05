@@ -3,6 +3,7 @@ import MovieGrid from '@/components/sections/MovieGrid'
 import ComingSoon from '@/components/sections/ComingSoon'
 import SEO from '@/components/shared/SEO'
 import { MovieGridSkeleton } from '@/components/shared/Skeleton'
+import MovieCard from '@/components/shared/MovieCard'
 
 export default function MoviesPage() {
   const { data: moviesOnly = [], isLoading: latestLoad } = useLatestMovies()
