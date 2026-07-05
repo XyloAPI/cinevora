@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconLock } from '@tabler/icons-react'
 
+// Debug env values
+console.log('VITE_ADMIN_USERNAME:', import.meta.env.VITE_ADMIN_USERNAME)
+console.log('VITE_ADMIN_PASSWORD:', import.meta.env.VITE_ADMIN_PASSWORD)
+
 export default function AdminLogin() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
