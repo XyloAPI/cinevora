@@ -13,11 +13,14 @@ export default function TmdbRow({ title, movies }: TmdbRowProps) {
 
   return (
     <section className="mb-8">
-      <div className="flex items-center justify-between mb-4 px-4 sm:px-6 lg:px-8">
-        <h2 className="text-base sm:text-lg font-bold">{title}</h2>
-        <Link to="/trending" className="text-[12px] text-white/30 hover:text-white transition-colors">View All</Link>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-bold">{title}</h2>
+          <Link to="/trending" className="text-[12px] text-white/30 hover:text-white transition-colors">View All</Link>
+        </div>
       </div>
-      <div ref={rowRef} className="flex gap-2.5 overflow-x-auto px-4 sm:px-6 lg:px-8 pb-2 scrollbar-none">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={rowRef} className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
         {movies.map((m) => (
           <a key={m.id} href={`https://www.themoviedb.org/movie/${m.id}`} target="_blank" rel="noopener noreferrer"
             className="shrink-0 w-[140px] sm:w-[150px] group">
@@ -35,6 +38,7 @@ export default function TmdbRow({ title, movies }: TmdbRowProps) {
             </div>
           </a>
         ))}
+      </div>
       </div>
     </section>
   )

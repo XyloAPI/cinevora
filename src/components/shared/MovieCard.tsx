@@ -9,6 +9,7 @@ interface MovieCardProps {
   movie: Movie
   compact?: boolean
   countdownDate?: string
+  grid?: boolean
 }
 
 function Countdown({ date }: { date: string }) {
@@ -28,10 +29,10 @@ function QualityBadge({ quality }: { quality?: string }) {
   return <span className={`badge-quality ${cls}`}>{quality}</span>
 }
 
-export default function MovieCard({ movie, compact, countdownDate }: MovieCardProps) {
+export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth }: MovieCardProps) {
   if (compact) {
     return (
-      <Link to={`/movie/${slugify(movie.title)}`} className="group flex-shrink-0 w-[170px] sm:w-[185px]">
+      <Link to={`/movie/${slugify(movie.title)}`} className={`group ${fillWidth ? 'w-full' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
         <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
           <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
             <LazyImage src={movie.poster} alt={movie.title} />
