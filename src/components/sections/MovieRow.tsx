@@ -58,8 +58,8 @@ export default function MovieRow({ title, movies, id }: MovieRowProps) {
           onDragStart={(e) => e.preventDefault()}
           style={{ scrollBehavior: dragging ? 'auto' : 'smooth' }}
         >
-          {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} compact />
+          {movies.map((movie, i) => (
+            <MovieCard key={movie.id} movie={movie} compact fetchPriority={i < 4 ? 'high' : 'auto'} />
           ))}
         </div>
       </div>

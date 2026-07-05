@@ -10,6 +10,7 @@ interface MovieCardProps {
   compact?: boolean
   countdownDate?: string
   grid?: boolean
+  fetchPriority?: 'high' | 'low' | 'auto'
 }
 
 function Countdown({ date }: { date: string }) {
@@ -29,13 +30,13 @@ function QualityBadge({ quality }: { quality?: string }) {
   return <span className={`badge-quality ${cls}`}>{quality}</span>
 }
 
-export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth }: MovieCardProps) {
+export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth, fetchPriority }: MovieCardProps) {
   if (compact) {
     return (
       <Link to={`/movie/${slugify(movie.title)}`} className={`group ${fillWidth ? 'w-full' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
         <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
           <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
-            <LazyImage src={movie.poster} alt={movie.title} />
+            <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute top-1.5 right-1.5">
               <QualityBadge quality={movie.quality} />
@@ -79,7 +80,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
     <Link to={`/movie/${slugify(movie.title)}`} className="group block">
       <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
         <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
-          <LazyImage src={movie.poster} alt={movie.title} />
+          <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
           <div className="absolute top-1.5 left-1.5 flex gap-1 flex-wrap">
