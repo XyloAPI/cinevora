@@ -76,4 +76,32 @@ export function useGenres() {
   })
 }
 
+export function useTmdbTrending() {
+  return useQuery({
+    queryKey: ['tmdb', 'trending'],
+    queryFn: async () => {
+      try {
+        const { getTrending } = await import('@/lib/tmdb')
+        const data = await getTrending('week', 1)
+        return data.results
+      } catch { return [] }
+    },
+    staleTime: 1000 * 60 * 60,
+  })
+}
+
+export function useTmdbPopular() {
+  return useQuery({
+    queryKey: ['tmdb', 'popular'],
+    queryFn: async () => {
+      try {
+        const { getPopular } = await import('@/lib/tmdb')
+        const data = await getPopular(1)
+        return data.results
+      } catch { return [] }
+    },
+    staleTime: 1000 * 60 * 60,
+  })
+}
+
 export { movieSchema }
