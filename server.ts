@@ -62,7 +62,11 @@ app.get('/api/tmdb/movie/:id', async (req: any, res: any) => {
         headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
       })
       if (enResponse.ok) {
-        data = await enResponse.json()
+        const enData = await enResponse.json()
+        data.overview = enData.overview
+        if (!data.tagline && enData.tagline) {
+          data.tagline = enData.tagline
+        }
       }
     }
     res.json(data)
