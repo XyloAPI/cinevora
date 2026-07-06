@@ -16,11 +16,12 @@ export default function MoviesPage() {
 
   if (searchQuery) {
     const query = decodeURIComponent(searchQuery).trim()
-    const filteredMovies = allMovies.filter((movie) =>
-      movie.title.toLowerCase().includes(query.toLowerCase()) ||
-      (movie.synopsis && movie.synopsis.toLowerCase().includes(query.toLowerCase())) ||
-      movie.genre.some((g: string) => g.toLowerCase().includes(query.toLowerCase()))
-    )
+    const filteredMovies = allMovies.filter((movie) => {
+      const titleMatch = movie.title?.toLowerCase().includes(query.toLowerCase())
+      const synopsisMatch = movie.synopsis?.toLowerCase().includes(query.toLowerCase())
+      const genreMatch = Array.isArray(movie.genre) && movie.genre.some((g: string) => g.toLowerCase().includes(query.toLowerCase()))
+      return titleMatch || synopsisMatch || genreMatch
+    })
 
     return (
       <div className="pt-14">

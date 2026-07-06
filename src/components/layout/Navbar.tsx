@@ -113,10 +113,11 @@ export default function Navbar() {
           </div>
           {/* Desktop: slide-out search */}
           <div ref={searchRef} className="hidden md:flex items-center">
-            <form onSubmit={handleSearchSubmit} className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSearchSubmit(); }} className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
               <input ref={inputRef} type="text" placeholder="Search movies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
                 className="w-full bg-white/10 text-white text-[13px] px-3 py-1.5 rounded outline-none focus:ring-1 focus:ring-cinema-red/50 placeholder-white/20" />
             </form>
             <button onClick={handleSearchClick}
