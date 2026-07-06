@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IconSearch, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
 import { navLinks } from '@/data/movies'
 import { useGenres } from '@/hooks/useMovies'
@@ -9,6 +9,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [genreOpen, setGenreOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const genreRef = useRef<HTMLDivElement>(null)
@@ -31,6 +33,28 @@ export default function Navbar() {
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [])
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/movies?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+      setSearchOpen(false)
+      setOpen(false)
+    }
+  }
+
+  const handleSearchClick = () => {
+    if (!searchOpen) {
+      setSearchOpen(true)
+    } else {
+      if (searchQuery.trim()) {
+        handleSearchSubmit()
+      } else {
+        setSearchOpen(false)
+      }
+    }
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-cinema-950/95 backdrop-blur-md border-b border-white/[0.04]">
@@ -79,6 +103,9 @@ export default function Navbar() {
           <div className={`md:hidden absolute left-0 right-0 top-0 h-14 bg-cinema-950/95 backdrop-blur-md flex items-center px-4 z-50 transition-all duration-200 ${searchOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
             <IconSearch size={16} className="text-white/30 shrink-0" />
             <input type="text" placeholder="Search movies..." autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
               className="w-full bg-transparent text-white text-[13px] px-3 py-1.5 outline-none placeholder-white/20" />
             <button onClick={() => setSearchOpen(false)} className="text-white/40 hover:text-white p-1">
               <IconX size={16} />
@@ -86,11 +113,13 @@ export default function Navbar() {
           </div>
           {/* Desktop: slide-out search */}
           <div ref={searchRef} className="hidden md:flex items-center">
-            <div className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
+            <form onSubmit={handleSearchSubmit} className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
               <input ref={inputRef} type="text" placeholder="Search movies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-white/10 text-white text-[13px] px-3 py-1.5 rounded outline-none focus:ring-1 focus:ring-cinema-red/50 placeholder-white/20" />
-            </div>
-            <button onClick={() => setSearchOpen(!searchOpen)}
+            </form>
+            <button onClick={handleSearchClick}
               className="flex items-center p-1.5 text-white/40 hover:text-white transition-colors rounded hover:bg-white/[0.04]">
               <IconSearch size={16} />
             </button>
