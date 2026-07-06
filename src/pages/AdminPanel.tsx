@@ -86,6 +86,7 @@ export default function AdminPanel() {
   const [localMovies, setLocalMovies] = useState<Movie[]>([])
   const [editingMovie, setEditingMovie] = useState<Partial<Movie> | null>(null)
   const [synopsisText, setSynopsisText] = useState('')
+  const [taglineText, setTaglineText] = useState('')
   const [jsonView, setJsonView] = useState(false)
   const [dbStatus, setDbStatus] = useState<'idle' | 'checking' | 'ok' | 'fail'>('idle')
   const [page, setPage] = useState(0)
@@ -94,6 +95,9 @@ export default function AdminPanel() {
   const originalSynopsisRef = useRef('')
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false)
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
+  const originalTaglineRef = useRef('')
+  const [translatingTagline, setTranslatingTagline] = useState(false)
+  const [taglineTranslated, setTaglineTranslated] = useState(false)
   const { data: moviesData, isLoading, refetch } = useAllMovies()
   const { data: genresData } = useGenresHook()
 
@@ -107,6 +111,8 @@ export default function AdminPanel() {
   function openAddForm() {
     setSynopsisText('')
     setSynopsisTranslated(false)
+    setTaglineText('')
+    setTaglineTranslated(false)
     setEditingMovie({
       id: '',
       title: '',
@@ -127,6 +133,8 @@ export default function AdminPanel() {
   function openEditForm(m: Movie) {
     setSynopsisText(m.synopsis || '')
     setSynopsisTranslated(false)
+    setTaglineText(m.tagline || '')
+    setTaglineTranslated(false)
     setEditingMovie({ ...m })
     setFormKey((k) => k + 1)
   }
@@ -184,6 +192,8 @@ export default function AdminPanel() {
       // Open edit form with prefilled data instead of directly saving
       setSynopsisText(mapped.synopsis || '')
       setSynopsisTranslated(false)
+      setTaglineText(mapped.tagline || '')
+      setTaglineTranslated(false)
       setEditingMovie({
         id: `tmdb-${detail.id}`,
         slug: slugify(mapped.title),
@@ -265,7 +275,7 @@ export default function AdminPanel() {
       seasons: null,
       tmdb_id: Number(form.get('tmdbId')) || null,
       imdb_id: (form.get('imdbId') as string) || null,
-      tagline: (form.get('tagline') as string) || null,
+      tagline: taglineText || null,
       runtime: Number(form.get('runtime')) || null,
       budget: Number(form.get('budget')) || null,
       revenue: Number(form.get('revenue')) || null,
@@ -297,7 +307,7 @@ export default function AdminPanel() {
     } finally {
       setSaving(false)
     }
-  }, [editingMovie, localMovies, refetch, synopsisText])
+  }, [editingMovie, localMovies, refetch, synopsisText, taglineText])
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Delete this movie?')) return
@@ -557,7 +567,36 @@ export default function AdminPanel() {
                     </div>
                     <textarea name="synopsis" value={synopsisText} onChange={(e) => setSynopsisText(e.target.value)} required className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none resize-none h-16 mt-0.5" />
                   </div>
-                  <label className="flex flex-col gap-1 text-[11px] text-white/40">Tagline<input name="tagline" defaultValue={editingMovie.tagline || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-white/40">Tagline</span>
+                      <button type="button" disabled={translatingTagline} onClick={async () => {
+                        if (translatingTagline) return
+                        if (taglineTranslated) {
+                          setTaglineText(originalTaglineRef.current)
+                          setTaglineTranslated(false)
+                          return
+                        }
+                        const text = taglineText
+                        if (!text.trim()) return
+                        originalTaglineRef.current = text
+                        setTranslatingTagline(true)
+                        try {
+                          const t = await translateToId(text)
+                          setTaglineText(t)
+                          setTaglineTranslated(true)
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : 'Translate failed')
+                        } finally {
+                          setTranslatingTagline(false)
+                        }
+                      }}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors uppercase tracking-wider disabled:opacity-50 ${translatingTagline ? 'bg-yellow-500/20 text-yellow-400 animate-pulse' : taglineTranslated ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-cinema-red/20 text-cinema-red hover:bg-cinema-red/30'}`}>
+                        {translatingTagline ? <><span className="inline-block w-2 h-2 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" /> ID</> : taglineTranslated ? <><IconLanguage size={11} /> Asli</> : <><IconLanguage size={11} /> ID</>}
+                      </button>
+                    </div>
+                    <input name="tagline" value={taglineText} onChange={(e) => setTaglineText(e.target.value)} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" />
+                  </div>
                   <label className="flex flex-col gap-1 text-[11px] text-white/40">Release Date<input name="releaseDate" type="date" defaultValue={editingMovie.releaseDate || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
                   <label className="flex flex-col gap-1 text-[11px] text-white/40">Duration<input name="duration" defaultValue={editingMovie.duration || ''} placeholder="e.g. 2h 28m" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
                   <label className="flex flex-col gap-1 text-[11px] text-white/40">Runtime (min)<input name="runtime" type="number" defaultValue={editingMovie.runtime ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
