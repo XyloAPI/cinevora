@@ -30,7 +30,7 @@ export default function WatchPage() {
 
   return (
     <div className="min-h-screen bg-cinema-950 text-white flex flex-col">
-      <SEO title={`Watch ${movie.title}`} description={movie.synopsis} url={`/watch/${slug}`} />
+      <SEO title={`Watch ${movie.title}`} description={movie.synopsis} url={`/watch/${slug}`} movie={movie} />
 
       <header className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14 shrink-0 bg-cinema-950/95 backdrop-blur-md border-b border-white/[0.04]">
         <div className="flex items-center gap-3">

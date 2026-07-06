@@ -76,6 +76,7 @@ export default function MovieDetailPage() {
         description={movie.synopsis}
         image={movie.backdrop}
         url={`/movie/${slug}`}
+        movie={movie}
       />
 
       <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-end">
