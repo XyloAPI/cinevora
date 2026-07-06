@@ -103,7 +103,7 @@ export async function getGenres() {
   return Array.from(genreMap.entries()).map(([name, count]) => ({
     name,
     count,
-    href: '/',
+    href: `/genres?genre=${encodeURIComponent(name)}`,
   }))
 }
 

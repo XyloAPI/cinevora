@@ -41,7 +41,7 @@ export default function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
-            {navLinks.map((link) => (
+            {navLinks.filter((l) => l.label !== 'Genres').map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
@@ -62,7 +62,7 @@ export default function Navbar() {
                 <div className="absolute top-full left-0 mt-1 w-44 bg-cinema-900 border border-white/[0.06] rounded-lg shadow-xl shadow-black/50 overflow-hidden">
                   <div className="p-1.5 max-h-64 overflow-y-auto">
                     {genres.map((g) => (
-                      <Link key={g.name} to="/genres"
+                      <Link key={g.name} to={g.href} onClick={() => setGenreOpen(false)}
                         className="block px-3 py-1.5 text-[13px] text-white/50 hover:text-white hover:bg-white/[0.04] rounded transition-colors">
                         {g.name}
                       </Link>
