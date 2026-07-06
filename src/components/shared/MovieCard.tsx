@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
-import { IconClock } from '@tabler/icons-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
 import LazyImage from '@/components/shared/LazyImage'
+import Countdown from '@/components/shared/Countdown'
+import QualityBadge from '@/components/shared/QualityBadge'
 import type { Movie } from '@/types'
 
 interface MovieCardProps {
@@ -10,23 +11,6 @@ interface MovieCardProps {
   countdownDate?: string
   grid?: boolean
   fetchPriority?: 'high' | 'low' | 'auto'
-}
-
-function Countdown({ date }: { date: string }) {
-  const target = new Date(date)
-  const label = target > new Date() ? formatDistanceToNow(target) : 'Soon'
-  return (
-    <span className="flex items-center gap-1 text-[10px] text-white/40">
-      <IconClock size={10} />
-      {label}
-    </span>
-  )
-}
-
-function QualityBadge({ quality }: { quality?: string }) {
-  if (!quality) return null
-  const cls = quality.toLowerCase().replace('-', '').replace(' ', '')
-  return <span className={`badge-quality ${cls}`}>{quality}</span>
 }
 
 export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth, fetchPriority }: MovieCardProps) {
