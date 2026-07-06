@@ -54,7 +54,17 @@ app.get('/api/tmdb/movie/:id', async (req: any, res: any) => {
       headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
     })
     if (!response.ok) throw new Error(`TMDB ${response.status}`)
-    const data = await response.json()
+    let data = await response.json()
+
+    if (!data.overview || data.overview.trim() === '') {
+      const enUrl = `${TMDB_BASE}/movie/${id}?language=en-US`
+      const enResponse = await fetch(enUrl, {
+        headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+      })
+      if (enResponse.ok) {
+        data = await enResponse.json()
+      }
+    }
     res.json(data)
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
@@ -79,7 +89,7 @@ app.get('/api/tmdb/movie/:id/credits', async (req: any, res: any) => {
 app.get('/api/tmdb/movie/:id/videos', async (req: any, res: any) => {
   try {
     const { id } = req.params
-    const url = `${TMDB_BASE}/movie/${id}/videos?language=id-ID`
+    const url = `${TMDB_BASE}/movie/${id}/videos`
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
     })
