@@ -8,19 +8,36 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { HeroSkeleton } from '@/components/shared/Skeleton'
 
-const HomePage = lazy(() => import('@/pages/HomePage'))
-const TrendingPage = lazy(() => import('@/pages/TrendingPage'))
-const MoviesPage = lazy(() => import('@/pages/MoviesPage'))
-const SeriesPage = lazy(() => import('@/pages/SeriesPage'))
-const GenresPage = lazy(() => import('@/pages/GenresPage'))
-const MovieDetailPage = lazy(() => import('@/pages/MovieDetailPage'))
-const WatchPage = lazy(() => import('@/pages/WatchPage'))
-const TrailerPage = lazy(() => import('@/pages/TrailerPage'))
-const AdminPanel = lazy(() => import('@/pages/AdminPanel'))
-const FAQPage = lazy(() => import('@/pages/FAQPage'))
-const ContactPage = lazy(() => import('@/pages/ContactPage'))
-const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'))
-const TermsPage = lazy(() => import('@/pages/TermsPage'))
+function lazyWithRetry(importFunc: () => Promise<any>) {
+  return lazy(async () => {
+    try {
+      return await importFunc()
+    } catch (error) {
+      const lastReload = sessionStorage.getItem('chunk_reload_time')
+      const now = Date.now()
+      if (!lastReload || now - Number(lastReload) > 10000) {
+        sessionStorage.setItem('chunk_reload_time', String(now))
+        window.location.reload()
+        return { default: () => null }
+      }
+      throw error
+    }
+  })
+}
+
+const HomePage = lazyWithRetry(() => import('@/pages/HomePage'))
+const TrendingPage = lazyWithRetry(() => import('@/pages/TrendingPage'))
+const MoviesPage = lazyWithRetry(() => import('@/pages/MoviesPage'))
+const SeriesPage = lazyWithRetry(() => import('@/pages/SeriesPage'))
+const GenresPage = lazyWithRetry(() => import('@/pages/GenresPage'))
+const MovieDetailPage = lazyWithRetry(() => import('@/pages/MovieDetailPage'))
+const WatchPage = lazyWithRetry(() => import('@/pages/WatchPage'))
+const TrailerPage = lazyWithRetry(() => import('@/pages/TrailerPage'))
+const AdminPanel = lazyWithRetry(() => import('@/pages/AdminPanel'))
+const FAQPage = lazyWithRetry(() => import('@/pages/FAQPage'))
+const ContactPage = lazyWithRetry(() => import('@/pages/ContactPage'))
+const PrivacyPage = lazyWithRetry(() => import('@/pages/PrivacyPage'))
+const TermsPage = lazyWithRetry(() => import('@/pages/TermsPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -39,12 +56,38 @@ function PageFallback() {
 }
 
 function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+  const isChunkError = error instanceof Error && (
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('dynamically imported module') ||
+    error.message.includes('Loading chunk')
+  )
+
+  useEffect(() => {
+    if (isChunkError) {
+      const lastReload = sessionStorage.getItem('chunk_reload_time')
+      const now = Date.now()
+      if (!lastReload || now - Number(lastReload) > 10000) {
+        sessionStorage.setItem('chunk_reload_time', String(now))
+        window.location.reload()
+      }
+    }
+  }, [isChunkError])
+
   return (
-    <div className="min-h-screen flex items-center justify-center pt-14">
+    <div className="min-h-screen flex items-center justify-center pt-14 bg-cinema-950 text-white">
       <div className="text-center max-w-md px-4">
         <h2 className="text-lg font-bold mb-2">Something went wrong</h2>
-        <p className="text-sm text-white/50 mb-4">{error instanceof Error ? error.message : 'An unexpected error occurred'}</p>
-        <button onClick={resetErrorBoundary} className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors">
+        <p className="text-sm text-white/50 mb-4 text-pretty">
+          {isChunkError ? 'Memperbarui aplikasi ke versi terbaru...' : (error instanceof Error ? error.message : 'An unexpected error occurred')}
+        </p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem('chunk_reload_time')
+            resetErrorBoundary()
+            window.location.reload()
+          }}
+          className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors"
+        >
           Try again
         </button>
       </div>
