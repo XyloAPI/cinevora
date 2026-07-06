@@ -64,7 +64,7 @@ export interface TmdbMovieResult {
   original_title: string
   overview: string
   release_date: string
-  vote_average: number
+  vote_average?: number
   vote_count: number
   popularity: number
   poster_path: string | null
@@ -74,6 +74,8 @@ export interface TmdbMovieResult {
   adult: boolean
   video: boolean
   media_type?: string
+  name?: string
+  first_air_date?: string
 }
 
 export interface TmdbMovieDetail {

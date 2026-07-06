@@ -462,8 +462,13 @@ export default function AdminPanel() {
                           <div className="w-6 h-9 rounded overflow-hidden bg-cinema-800 shrink-0">
                             {m.poster_path && <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" className="w-full h-full object-cover" />}
                           </div>
-                          <span className="flex-1 truncate">{m.title} <span className="text-white/30">({m.release_date?.slice(0, 4)})</span></span>
-                          <span className="text-yellow-400/70 text-[10px]">{m.vote_average.toFixed(1)}</span>
+                          <span className="flex-1 truncate">
+                            {m.title || m.name}{' '}
+                            <span className="text-white/30">
+                              ({(m.release_date || m.first_air_date)?.slice(0, 4) || '—'})
+                            </span>
+                          </span>
+                          <span className="text-yellow-400/70 text-[10px]">{(m.vote_average ?? 0).toFixed(1)}</span>
                           {existingTmdbIds.has(m.id) ? (
                             <span className="px-2 py-0.5 bg-white/5 text-white/30 text-[10px] rounded">In DB</span>
                           ) : (
@@ -485,8 +490,13 @@ export default function AdminPanel() {
                           <div className="w-6 h-9 rounded overflow-hidden bg-cinema-800 shrink-0">
                             {m.poster_path && <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" className="w-full h-full object-cover" />}
                           </div>
-                          <span className="flex-1 truncate">{m.title} <span className="text-white/30">({m.release_date?.slice(0, 4)})</span></span>
-                          <span className="text-yellow-400/70 text-[10px]">{m.vote_average.toFixed(1)}</span>
+                          <span className="flex-1 truncate">
+                            {m.title || m.name}{' '}
+                            <span className="text-white/30">
+                              ({(m.release_date || m.first_air_date)?.slice(0, 4) || '—'})
+                            </span>
+                          </span>
+                          <span className="text-yellow-400/70 text-[10px]">{(m.vote_average ?? 0).toFixed(1)}</span>
                           {existingTmdbIds.has(m.id) ? (
                             <span className="px-2 py-0.5 bg-white/5 text-white/30 text-[10px] rounded">In DB</span>
                           ) : (
