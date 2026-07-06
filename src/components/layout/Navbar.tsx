@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { IconSearch, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
 import { navLinks } from '@/data/movies'
 import { useGenres } from '@/hooks/useMovies'
@@ -8,8 +8,9 @@ export default function Navbar() {
   const { data: genres = [] } = useGenres()
   const [open, setOpen] = useState(false)
   const [genreOpen, setGenreOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchParams] = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
+  const [searchOpen, setSearchOpen] = useState(!!searchQuery)
   const navigate = useNavigate()
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -27,20 +28,20 @@ export default function Navbar() {
         setGenreOpen(false)
       }
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setSearchOpen(false)
+        if (!searchQuery) {
+          setSearchOpen(false)
+        }
       }
     }
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
-  }, [])
+  }, [searchQuery])
 
-  const handleSearchSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (searchQuery.trim()) {
-      navigate(`/movies?search=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchQuery('')
-      setSearchOpen(false)
-      setOpen(false)
+  const handleSearchChange = (val: string) => {
+    if (val.trim()) {
+      navigate(`/movies?search=${encodeURIComponent(val)}`)
+    } else {
+      navigate('/movies')
     }
   }
 
@@ -48,10 +49,9 @@ export default function Navbar() {
     if (!searchOpen) {
       setSearchOpen(true)
     } else {
-      if (searchQuery.trim()) {
-        handleSearchSubmit()
-      } else {
-        setSearchOpen(false)
+      setSearchOpen(false)
+      if (searchQuery) {
+        navigate('/movies')
       }
     }
   }
@@ -104,22 +104,20 @@ export default function Navbar() {
             <IconSearch size={16} className="text-white/30 shrink-0" />
             <input type="text" placeholder="Search movies..." autoFocus
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-transparent text-white text-[13px] px-3 py-1.5 outline-none placeholder-white/20" />
-            <button onClick={() => setSearchOpen(false)} className="text-white/40 hover:text-white p-1">
+            <button onClick={() => { setSearchOpen(false); navigate('/movies'); }} className="text-white/40 hover:text-white p-1">
               <IconX size={16} />
             </button>
           </div>
           {/* Desktop: slide-out search */}
           <div ref={searchRef} className="hidden md:flex items-center">
-            <form onSubmit={(e) => { e.preventDefault(); handleSearchSubmit(); }} className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
+            <div className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
               <input ref={inputRef} type="text" placeholder="Search movies..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full bg-white/10 text-white text-[13px] px-3 py-1.5 rounded outline-none focus:ring-1 focus:ring-cinema-red/50 placeholder-white/20" />
-            </form>
+            </div>
             <button onClick={handleSearchClick}
               className="flex items-center p-1.5 text-white/40 hover:text-white transition-colors rounded hover:bg-white/[0.04]">
               <IconSearch size={16} />
