@@ -112,4 +112,43 @@ export function useTrendingFromDb() {
   })
 }
 
+export function useCategoryFromDb(
+  category: 'trending' | 'now_playing' | 'popular' | 'top_rated',
+  region: string = '',
+  queryKeyExtra: string = ''
+) {
+  return useQuery({
+    queryKey: ['movies', 'category-db', category, region, queryKeyExtra],
+    queryFn: async () => {
+      try {
+        const all = await db.fetchAllMovies()
+        if (!all || all.length === 0) return [] as Movie[]
+
+        try {
+          const tmdbModule = await import('@/lib/tmdb')
+          const res = await tmdbModule.getMoviesByCategory(category, region, 1)
+          if (res && res.results && res.results.length > 0) {
+            const orderMap = new Map(res.results.map((r: { id: number }, idx: number) => [r.id, idx + 1]))
+            const filtered = all.filter((m) => m.tmdbId && orderMap.has(Number(m.tmdbId)))
+            if (filtered.length > 0) {
+              filtered.sort((a, b) => (orderMap.get(Number(a.tmdbId)) || 999) - (orderMap.get(Number(b.tmdbId)) || 999))
+              return filtered
+            }
+          }
+        } catch (e) {
+          console.warn(`TMDB category ${category} fetch failed, using fallback:`, e)
+        }
+
+        if (category === 'top_rated') {
+          return [...all].sort((a, b) => b.rating - a.rating).slice(0, 12)
+        }
+        return all.slice(0, 12)
+      } catch {
+        return [] as Movie[]
+      }
+    },
+    staleTime: 1000 * 60 * 60,
+  })
+}
+
 
