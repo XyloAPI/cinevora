@@ -31,6 +31,16 @@ export async function getTrending(timeWindow: 'day' | 'week' = 'week', page: num
   return { results: data.results, total: data.total_results, page: data.page }
 }
 
+export async function getMoviesByCategory(
+  category: 'trending' | 'now_playing' | 'popular' | 'top_rated',
+  region: string = '',
+  page: number = 1
+): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
+  const path = `${API_BASE}/tmdb/list/${category}?page=${page}${region ? `&region=${region}` : ''}`
+  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number }>(path)
+  return { results: data.results, total: data.total_results, page: data.page }
+}
+
 export async function getMovieDetail(tmdbId: number): Promise<TmdbMovieDetail> {
   return fetchJson<TmdbMovieDetail>(`${API_BASE}/tmdb/movie/${tmdbId}`)
 }

@@ -53,6 +53,9 @@ export default function AdminPanel() {
   const [tmdbTrending, setTmdbTrending] = useState<TmdbMovieResult[]>([])
   const [tmdbImporting, setTmdbImporting] = useState<Set<number>>(new Set())
   const [showTmdbPanel, setShowTmdbPanel] = useState(false)
+  const [tmdbCategory, setTmdbCategory] = useState<'trending' | 'now_playing' | 'popular' | 'top_rated'>('trending')
+  const [tmdbRegion, setTmdbRegion] = useState('')
+  const [loadingCategoryMovies, setLoadingCategoryMovies] = useState(false)
 
   function openAddForm() {
     setEditingMovie({
@@ -88,10 +91,16 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (!authed) return
-    tmdb.getTrending().then((res) => {
-      setTmdbTrending(res.results || [])
-    }).catch(() => {})
-  }, [authed])
+    setLoadingCategoryMovies(true)
+    tmdb.getMoviesByCategory(tmdbCategory, tmdbRegion)
+      .then((res) => {
+        setTmdbTrending(res.results || [])
+      })
+      .catch(() => {})
+      .finally(() => {
+        setLoadingCategoryMovies(false)
+      })
+  }, [authed, tmdbCategory, tmdbRegion])
 
   useEffect(() => {
     if (!authed) return
@@ -297,6 +306,11 @@ export default function AdminPanel() {
                 importFromTmdb={importFromTmdb}
                 handleTmdbSearch={handleTmdbSearch}
                 setShowTmdbPanel={setShowTmdbPanel}
+                tmdbCategory={tmdbCategory}
+                setTmdbCategory={setTmdbCategory}
+                tmdbRegion={tmdbRegion}
+                setTmdbRegion={setTmdbRegion}
+                loadingCategoryMovies={loadingCategoryMovies}
               />
             )}
 
