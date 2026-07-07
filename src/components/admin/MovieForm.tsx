@@ -34,6 +34,7 @@ export default function MovieForm({
 }: MovieFormProps) {
   const [synopsisText, setSynopsisText] = useState('')
   const [taglineText, setTaglineText] = useState('')
+  const [streamUrlText, setStreamUrlText] = useState('')
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false)
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
   const [translatingTagline, setTranslatingTagline] = useState(false)
@@ -46,6 +47,7 @@ export default function MovieForm({
   useEffect(() => {
     setSynopsisText(editingMovie.synopsis || '')
     setTaglineText(editingMovie.tagline || '')
+    setStreamUrlText(editingMovie.streamUrl || '')
     setSynopsisTranslated(false)
     setTaglineTranslated(false)
     originalSynopsisRef.current = editingMovie.synopsis || ''
@@ -62,7 +64,7 @@ export default function MovieForm({
     const prodRaw = (form.get('productionCompanies') as string || '').split(',').map((c) => c.trim()).filter(Boolean)
 
     const title = (form.get('title') as string) || ''
-    const rawStreamUrl = (form.get('streamUrl') as string) || ''
+    const rawStreamUrl = streamUrlText || ''
     const data = {
       slug: slugify(title),
       title,
@@ -203,7 +205,20 @@ export default function MovieForm({
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Cast<input name="cast" defaultValue={editingMovie.cast?.join(', ') || ''} placeholder="comma separated" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Logo URL<input name="logoUrl" defaultValue={editingMovie.logoUrl || ''} placeholder="TMDB logo URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Trailer URL<input name="trailerUrl" defaultValue={editingMovie.trailerUrl || ''} placeholder="YouTube URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Stream URL<input name="streamUrl" defaultValue={editingMovie.streamUrl || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
+        <label className="flex flex-col gap-1 text-[11px] text-white/40">
+          Stream URL
+          <input
+            name="streamUrl"
+            value={streamUrlText}
+            onChange={(e) => setStreamUrlText(e.target.value)}
+            onBlur={() => {
+              if (streamUrlText.trim()) {
+                setStreamUrlText(normalizeStreamUrl(streamUrlText))
+              }
+            }}
+            className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+          />
+        </label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Homepage<input name="homepage" defaultValue={editingMovie.homepage || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Original Lang.<input name="originalLanguage" defaultValue={editingMovie.originalLanguage || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Production Co.<input name="productionCompanies" defaultValue={editingMovie.productionCompanies?.join(', ') || ''} placeholder="comma separated" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
