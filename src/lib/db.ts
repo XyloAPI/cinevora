@@ -268,11 +268,11 @@ export async function runMigration() {
 }
 
 export async function backfillSlugs() {
-  const rows = await dbQuery<DbMovie>('SELECT id, title, year FROM movies WHERE slug IS NULL')
+  const rows = await dbQuery<DbMovie>('SELECT id, title, year FROM movies')
   let count = 0
   for (const row of rows) {
-    const slug = slugify(`${row.title} ${row.year}`)
-    await dbQuery('UPDATE movies SET slug = ? WHERE id = ?', [slug, row.id])
+    const targetSlug = slugify(`${row.title} ${row.year}`)
+    await dbQuery('UPDATE movies SET slug = ? WHERE id = ?', [targetSlug, row.id])
     count++
   }
   return count
