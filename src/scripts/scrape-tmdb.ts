@@ -229,7 +229,7 @@ async function scrapeAndSeed(
           const existingId = existing.rows[0].id as string
           const setClauses = cols.filter((c) => c !== '"id"').map((c) => `${c} = ?`).join(', ')
           const values = [
-            slugify(detail.title), detail.title, year, detail.vote_average, JSON.stringify(genreNames),
+            slugify(`${detail.title} ${year}`), detail.title, year, detail.vote_average, JSON.stringify(genreNames),
             imgPath(detail.poster_path), imgOriginal(detail.backdrop_path), detail.overview,
             0, 0, 0,
             detail.release_date || null, null, durationStr, 'movie',
@@ -248,7 +248,7 @@ async function scrapeAndSeed(
           })
         } else {
           const values = [
-            id, slugify(detail.title), detail.title, year, detail.vote_average, JSON.stringify(genreNames),
+            id, slugify(`${detail.title} ${year}`), detail.title, year, detail.vote_average, JSON.stringify(genreNames),
             imgPath(detail.poster_path), imgOriginal(detail.backdrop_path), detail.overview,
             0, 0, 0,
             detail.release_date || null, null, durationStr, 'movie',

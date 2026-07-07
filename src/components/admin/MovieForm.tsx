@@ -66,7 +66,7 @@ export default function MovieForm({
     const title = (form.get('title') as string) || ''
     const rawStreamUrl = streamUrlText || ''
     const data = {
-      slug: slugify(title),
+      slug: slugify(`${title} ${form.get('year')}`),
       title,
       year: Number(form.get('year')),
       rating: Number(form.get('rating')),

@@ -104,9 +104,9 @@ export default function ToolsTab({
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {localMovies.map((m) => (
               <div key={m.id} className="flex items-center gap-2 text-[11px]">
-                <span className="text-white/50 truncate flex-1">{m.title}</span>
+                <span className="text-white/50 truncate flex-1">{m.title} ({m.year})</span>
                 <span className="text-white/20">→</span>
-                <span className="text-cyan-400/70">{slugify(m.title)}</span>
+                <span className="text-cyan-400/70">{slugify(`${m.title} ${m.year}`)}</span>
               </div>
             ))}
           </div>

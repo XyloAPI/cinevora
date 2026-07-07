@@ -142,7 +142,7 @@ export default function AdminPanel() {
       // Open edit form with prefilled data instead of directly saving
       setEditingMovie({
         id: `tmdb-${detail.id}`,
-        slug: slugify(mapped.title),
+        slug: slugify(`${mapped.title} ${mapped.year}`),
         title: mapped.title,
         year: mapped.year,
         rating: mapped.rating,
