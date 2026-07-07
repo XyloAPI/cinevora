@@ -8,6 +8,25 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { HeroSkeleton } from '@/components/shared/Skeleton'
 
+async function forceHardUpdate() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const registration of registrations) {
+        await registration.unregister()
+      }
+    }
+    if ('caches' in window) {
+      const cacheNames = await caches.keys()
+      for (const name of cacheNames) {
+        await caches.delete(name)
+      }
+    }
+  } catch (err) {
+    console.error('Failed to clear cache:', err)
+  }
+}
+
 function lazyWithRetry(importFunc: () => Promise<any>) {
   return lazy(async () => {
     try {
@@ -17,6 +36,7 @@ function lazyWithRetry(importFunc: () => Promise<any>) {
       const now = Date.now()
       if (!lastReload || now - Number(lastReload) > 10000) {
         sessionStorage.setItem('chunk_reload_time', String(now))
+        await forceHardUpdate()
         window.location.reload()
         return { default: () => null }
       }
@@ -68,7 +88,9 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
       const now = Date.now()
       if (!lastReload || now - Number(lastReload) > 10000) {
         sessionStorage.setItem('chunk_reload_time', String(now))
-        window.location.reload()
+        forceHardUpdate().finally(() => {
+          window.location.reload()
+        })
       }
     }
   }, [isChunkError])
@@ -84,7 +106,9 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
           onClick={() => {
             sessionStorage.removeItem('chunk_reload_time')
             resetErrorBoundary()
-            window.location.reload()
+            forceHardUpdate().finally(() => {
+              window.location.reload()
+            })
           }}
           className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors"
         >
