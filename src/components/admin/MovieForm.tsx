@@ -13,6 +13,19 @@ interface MovieFormProps {
   refetch: () => void
 }
 
+function normalizeStreamUrl(input: string): string {
+  const trimmed = input.trim()
+  if (!trimmed) return ''
+  if (!trimmed.includes('.')) {
+    return `https://streamxylospace.qzz.io/e/${trimmed}`
+  }
+  if (trimmed.includes('streamxylospace')) {
+    const code = trimmed.split('/').filter(Boolean).pop() || ''
+    return `https://streamxylospace.qzz.io/e/${code}`
+  }
+  return trimmed
+}
+
 export default function MovieForm({
   editingMovie,
   localMovies,
@@ -49,6 +62,7 @@ export default function MovieForm({
     const prodRaw = (form.get('productionCompanies') as string || '').split(',').map((c) => c.trim()).filter(Boolean)
 
     const title = (form.get('title') as string) || ''
+    const rawStreamUrl = (form.get('streamUrl') as string) || ''
     const data = {
       slug: slugify(title),
       title,
@@ -81,7 +95,7 @@ export default function MovieForm({
       cast: castRaw.length ? JSON.stringify(castRaw) : null,
       logo_url: (form.get('logoUrl') as string) || null,
       trailer_url: (form.get('trailerUrl') as string) || null,
-      stream_url: (form.get('streamUrl') as string) || null,
+      stream_url: rawStreamUrl ? normalizeStreamUrl(rawStreamUrl) : null,
       production_companies: prodRaw.length ? JSON.stringify(prodRaw) : null,
       status: (form.get('status') as string) || null,
     }
