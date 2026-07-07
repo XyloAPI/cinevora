@@ -210,7 +210,17 @@ export default function MovieForm({
           <input
             name="streamUrl"
             value={streamUrlText}
-            onChange={(e) => setStreamUrlText(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+              setStreamUrlText(val)
+              
+              const trimmed = val.trim()
+              if (trimmed.includes('streamxylospace') && (trimmed.includes('/d/') || trimmed.includes('/download/'))) {
+                setStreamUrlText(normalizeStreamUrl(trimmed))
+              } else if (/^[a-zA-Z0-9]{12}$/.test(trimmed)) {
+                setStreamUrlText(normalizeStreamUrl(trimmed))
+              }
+            }}
             onBlur={() => {
               if (streamUrlText.trim()) {
                 setStreamUrlText(normalizeStreamUrl(streamUrlText))
