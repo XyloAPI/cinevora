@@ -56,7 +56,7 @@ export default function MovieCast({ cast }: MovieCastProps) {
                 <img src={c.photo} alt={c.name} loading="lazy" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/20 text-lg font-bold">
-                  {c.name.charAt(0)}
+                  {c.name ? c.name.charAt(0) : ''}
                 </div>
               )}
             </div>

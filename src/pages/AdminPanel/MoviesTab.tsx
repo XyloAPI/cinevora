@@ -198,7 +198,9 @@ export default function MoviesTab({
                         {m.isTrending && <span className="text-[10px]">🔥</span>}
                       </div>
                     </td>
-                    <td className="p-2 text-white/40 truncate max-w-[120px] hidden sm:table-cell">{m.genre.join(', ')}</td>
+                    <td className="p-2 text-white/40 truncate max-w-[120px] hidden sm:table-cell">
+                      {Array.isArray(m.genre) ? m.genre.join(', ') : ''}
+                    </td>
                     <td className="p-2 text-white/40 hidden md:table-cell">{m.quality || '—'}</td>
                     <td className="p-2 text-white/40 truncate max-w-[80px] hidden lg:table-cell" title={m.director}>
                       {m.director || '—'}

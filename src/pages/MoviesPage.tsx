@@ -17,9 +17,9 @@ export default function MoviesPage() {
   if (searchQuery) {
     const query = decodeURIComponent(searchQuery).trim()
     const filteredMovies = allMovies.filter((movie) => {
-      const titleMatch = movie.title?.toLowerCase().includes(query.toLowerCase())
-      const synopsisMatch = movie.synopsis?.toLowerCase().includes(query.toLowerCase())
-      const genreMatch = Array.isArray(movie.genre) && movie.genre.some((g: string) => g.toLowerCase().includes(query.toLowerCase()))
+      const titleMatch = movie.title ? movie.title.toLowerCase().includes(query.toLowerCase()) : false
+      const synopsisMatch = movie.synopsis ? movie.synopsis.toLowerCase().includes(query.toLowerCase()) : false
+      const genreMatch = Array.isArray(movie.genre) && movie.genre.some((g: string) => g && g.toLowerCase().includes(query.toLowerCase()))
       return titleMatch || synopsisMatch || genreMatch
     })
 

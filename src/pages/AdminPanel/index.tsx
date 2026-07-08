@@ -224,11 +224,10 @@ export default function AdminPanel() {
   const filtered = useMemo(() => {
     return localMovies.filter((m) => {
       const q = movieFilter.toLowerCase()
-      return (
-        m.title.toLowerCase().includes(q) ||
-        m.synopsis.toLowerCase().includes(q) ||
-        m.genre.some((g) => g.toLowerCase().includes(q))
-      )
+      const titleMatch = m.title ? m.title.toLowerCase().includes(q) : false
+      const synopsisMatch = m.synopsis ? m.synopsis.toLowerCase().includes(q) : false
+      const genreMatch = Array.isArray(m.genre) && m.genre.some((g) => g && g.toLowerCase().includes(q))
+      return titleMatch || synopsisMatch || genreMatch
     })
   }, [localMovies, movieFilter])
 

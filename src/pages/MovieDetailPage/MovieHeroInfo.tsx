@@ -125,7 +125,7 @@ export default function MovieHeroInfo({
             </div>
 
             <div className="flex items-center gap-2 text-xs text-white/30 mb-4 flex-wrap">
-              {movie.genre.map((g: string, i: number) => (
+              {Array.isArray(movie.genre) && movie.genre.map((g: string, i: number) => (
                 <span key={g} className="flex items-center gap-1">
                   {i > 0 && <span className="w-1 h-1 rounded-full bg-cinema-red/70 mr-1" />}
                   {g}

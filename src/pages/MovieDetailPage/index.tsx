@@ -38,7 +38,7 @@ export default function MovieDetailPage() {
       .getMovieDetail(id)
       .then((d) => {
         setCompanies(
-          d.production_companies.map((c) => ({
+          (d.production_companies || []).map((c) => ({
             name: c.name,
             logoUrl: c.logo_path ? `https://image.tmdb.org/t/p/w200${c.logo_path}` : undefined,
           }))
