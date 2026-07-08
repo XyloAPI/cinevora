@@ -17,6 +17,40 @@ interface Season {
   episodes: Episode[]
 }
 
+function isDirectVideo(urlStr: string): boolean {
+  if (!urlStr) return false
+  try {
+    const url = new URL(urlStr)
+    const pathname = url.pathname.toLowerCase()
+    return (
+      pathname.endsWith('.mp4') ||
+      pathname.endsWith('.mkv') ||
+      pathname.endsWith('.webm') ||
+      pathname.endsWith('.m3u8') ||
+      (url.hostname.includes('pixeldrain') && pathname.includes('/api/file/'))
+    )
+  } catch {
+    return false
+  }
+}
+
+function normalizeStreamPlayUrl(urlStr: string): string {
+  if (!urlStr) return ''
+  try {
+    const url = new URL(urlStr)
+    if (url.hostname.includes('pixeldrain')) {
+      const segments = url.pathname.split('/').filter(Boolean)
+      const uIndex = segments.findIndex((s) => s === 'u')
+      if (uIndex !== -1 && segments[uIndex + 1]) {
+        return `${url.origin}/api/file/${segments[uIndex + 1]}`
+      }
+    }
+    return urlStr
+  } catch {
+    return urlStr
+  }
+}
+
 export default function WatchPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const { data: movie, isLoading } = useMovieBySlug(slug)
@@ -68,12 +102,15 @@ export default function WatchPage() {
   }
 
   // Resolve current active stream URL
-  let currentStreamUrl = movie.streamUrl || ''
+  let rawStreamUrl = movie.streamUrl || ''
   if (isSeries && seasonsList.length > 0) {
     const seasonObj = seasonsList.find((s) => s.season === activeSeason)
     const episodeObj = seasonObj?.episodes.find((e) => e.episode === activeEpisode)
-    currentStreamUrl = episodeObj?.url || ''
+    rawStreamUrl = episodeObj?.url || ''
   }
+
+  const currentStreamUrl = normalizeStreamPlayUrl(rawStreamUrl)
+  const isDirect = isDirectVideo(currentStreamUrl)
 
   return (
     <div className="min-h-screen bg-cinema-950 text-white flex flex-col">
@@ -86,12 +123,22 @@ export default function WatchPage() {
         <div className="w-full max-w-5xl">
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
             {currentStreamUrl ? (
-              <iframe
-                src={currentStreamUrl}
-                className="absolute inset-0 w-full h-full rounded-lg bg-black"
-                allowFullScreen
-                allow="autoplay; fullscreen"
-              />
+              isDirect ? (
+                <video
+                  src={currentStreamUrl}
+                  className="absolute inset-0 w-full h-full rounded-lg bg-black"
+                  controls
+                  playsInline
+                  autoPlay
+                />
+              ) : (
+                <iframe
+                  src={currentStreamUrl}
+                  className="absolute inset-0 w-full h-full rounded-lg bg-black"
+                  allowFullScreen
+                  allow="autoplay; fullscreen"
+                />
+              )
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-cinema-900 rounded-lg">
                 <IconPlayerPlayFilled size={48} className="text-white/20 animate-pulse" />
