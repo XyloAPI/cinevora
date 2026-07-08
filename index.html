@@ -18,22 +18,33 @@
           var url = e.target.src || e.target.href;
           if (url && url.indexOf('/assets/') > -1) {
             console.warn('Critical asset failed to load:', url);
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.getRegistrations().then(function(regs) {
-                regs.forEach(function(reg) { reg.unregister(); });
-                if ('caches' in window) {
-                  caches.keys().then(function(keys) {
-                    keys.forEach(function(key) { caches.delete(key); });
+            var lastReload = sessionStorage.getItem('asset_fail_reload');
+            var now = Date.now();
+            if (!lastReload || (now - Number(lastReload) > 15000)) {
+              sessionStorage.setItem('asset_fail_reload', String(now));
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                  regs.forEach(function(reg) { reg.unregister(); });
+                  if ('caches' in window) {
+                    caches.keys().then(function(keys) {
+                      var promises = keys.map(function(key) { return caches.delete(key); });
+                      Promise.all(promises).then(function() {
+                        window.location.reload();
+                      });
+                    }).catch(function() {
+                      window.location.reload();
+                    });
+                  } else {
                     window.location.reload();
-                  });
-                } else {
+                  }
+                }).catch(function() {
                   window.location.reload();
-                }
-              }).catch(function() {
+                });
+              } else {
                 window.location.reload();
-              });
+              }
             } else {
-              window.location.reload();
+              console.error('Asset load failed repeatedly. Stopping reload loop.');
             }
           }
         }
