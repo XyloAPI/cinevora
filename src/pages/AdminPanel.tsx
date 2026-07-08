@@ -174,7 +174,19 @@ export default function AdminPanel() {
         cast: mapped.cast,
         logoUrl: logoUrl || undefined,
         trailerUrl: mapped.trailerUrl || undefined,
-        streamUrl: undefined,
+        streamUrl: tmdbType === 'series' && detail.seasons
+          ? JSON.stringify(
+              detail.seasons
+                .filter((s) => s.season_number > 0)
+                .map((s) => ({
+                  season: s.season_number,
+                  episodes: Array.from({ length: s.episode_count }, (_, i) => ({
+                    episode: i + 1,
+                    url: '',
+                  })),
+                }))
+            )
+          : undefined,
         productionCompanies: mapped.productionCompanies,
         status: mapped.status || undefined,
       })

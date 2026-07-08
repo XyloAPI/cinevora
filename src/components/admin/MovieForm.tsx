@@ -35,6 +35,9 @@ export default function MovieForm({
   const [synopsisText, setSynopsisText] = useState('')
   const [taglineText, setTaglineText] = useState('')
   const [streamUrlText, setStreamUrlText] = useState('')
+  const [mediaType, setMediaType] = useState<'movie' | 'series'>('movie')
+  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string }> }>>([])
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState<number>(0)
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false)
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
   const [translatingTagline, setTranslatingTagline] = useState(false)
@@ -52,6 +55,34 @@ export default function MovieForm({
     setTaglineTranslated(false)
     originalSynopsisRef.current = editingMovie.synopsis || ''
     originalTaglineRef.current = editingMovie.tagline || ''
+    
+    const typeVal = editingMovie.type || 'movie'
+    setMediaType(typeVal)
+    
+    if (typeVal === 'series') {
+      let parsed: any[] = []
+      try {
+        if (editingMovie.streamUrl && editingMovie.streamUrl.trim().startsWith('[')) {
+          parsed = JSON.parse(editingMovie.streamUrl)
+        }
+      } catch (e) {
+        // ignore error
+      }
+      
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setSeasonsList(parsed)
+      } else {
+        setSeasonsList([
+          {
+            season: 1,
+            episodes: editingMovie.streamUrl ? [{ episode: 1, url: editingMovie.streamUrl }] : [{ episode: 1, url: '' }]
+          }
+        ])
+      }
+      setActiveSeasonIndex(0)
+    } else {
+      setSeasonsList([])
+    }
   }, [editingMovie])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -65,6 +96,19 @@ export default function MovieForm({
 
     const title = (form.get('title') as string) || ''
     const rawStreamUrl = streamUrlText || ''
+    
+    let finalStreamUrl = ''
+    let totalSeasons: number | null = null
+    let totalEpisodes: number | null = null
+    
+    if (mediaType === 'series') {
+      finalStreamUrl = JSON.stringify(seasonsList)
+      totalSeasons = seasonsList.length
+      totalEpisodes = seasonsList.reduce((acc, s) => acc + s.episodes.length, 0)
+    } else {
+      finalStreamUrl = rawStreamUrl ? normalizeStreamUrl(rawStreamUrl) : ''
+    }
+
     const data = {
       slug: slugify(`${title} ${form.get('year')}`),
       title,
@@ -80,9 +124,9 @@ export default function MovieForm({
       release_date: (form.get('releaseDate') as string) || null,
       quality: (form.get('quality') as string) || null,
       duration: (form.get('duration') as string) || null,
-      type: (form.get('type') as string) || 'movie',
-      episodes: null,
-      seasons: null,
+      type: mediaType,
+      episodes: totalEpisodes,
+      seasons: totalSeasons,
       tmdb_id: Number(form.get('tmdbId')) || null,
       imdb_id: (form.get('imdbId') as string) || null,
       tagline: taglineText || null,
@@ -97,7 +141,7 @@ export default function MovieForm({
       cast: castRaw.length ? JSON.stringify(castRaw) : null,
       logo_url: (form.get('logoUrl') as string) || null,
       trailer_url: (form.get('trailerUrl') as string) || null,
-      stream_url: rawStreamUrl ? normalizeStreamUrl(rawStreamUrl) : null,
+      stream_url: finalStreamUrl || null,
       production_companies: prodRaw.length ? JSON.stringify(prodRaw) : null,
       status: (form.get('status') as string) || null,
     }
@@ -105,15 +149,15 @@ export default function MovieForm({
     try {
       if (isEdit) {
         await updateMovie(editingMovie.id!, data)
-        toast.success('Movie updated')
+        toast.success('Series/Movie updated')
       } else {
         await addMovie({ id: String(Date.now()), ...data })
-        toast.success('Movie added')
+        toast.success('Series/Movie added')
       }
       closeForm()
       refetch()
     } catch {
-      toast.error(isEdit ? 'Failed to update movie' : 'Failed to add movie')
+      toast.error(isEdit ? 'Failed to update' : 'Failed to add')
     } finally {
       setSaving(false)
     }
@@ -206,56 +250,173 @@ export default function MovieForm({
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Logo URL<input name="logoUrl" defaultValue={editingMovie.logoUrl || ''} placeholder="TMDB logo URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Trailer URL<input name="trailerUrl" defaultValue={editingMovie.trailerUrl || ''} placeholder="YouTube URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">
-          Stream URL
-          <input
-            name="streamUrl"
-            value={streamUrlText}
+          Type
+          <select
+            name="type"
+            value={mediaType}
             onChange={(e) => {
-              const val = e.target.value
-              setStreamUrlText(val)
-              
-              const trimmed = val.trim()
-              if (trimmed.includes('streamxylospace') && (trimmed.includes('/d/') || trimmed.includes('/download/'))) {
-                setStreamUrlText(normalizeStreamUrl(trimmed))
-              } else if (/^[a-zA-Z0-9]{12}$/.test(trimmed)) {
-                setStreamUrlText(normalizeStreamUrl(trimmed))
+              const val = e.target.value as 'movie' | 'series'
+              setMediaType(val)
+              if (val === 'series' && seasonsList.length === 0) {
+                setSeasonsList([
+                  {
+                    season: 1,
+                    episodes: [{ episode: 1, url: '' }]
+                  }
+                ])
+                setActiveSeasonIndex(0)
               }
             }}
-            onBlur={() => {
-              if (streamUrlText.trim()) {
-                setStreamUrlText(normalizeStreamUrl(streamUrlText))
-              }
-            }}
-            className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
-          />
+            className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+          >
+            <option value="movie">Movie</option>
+            <option value="series">Series</option>
+          </select>
         </label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Homepage<input name="homepage" defaultValue={editingMovie.homepage || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Original Lang.<input name="originalLanguage" defaultValue={editingMovie.originalLanguage || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Production Co.<input name="productionCompanies" defaultValue={editingMovie.productionCompanies?.join(', ') || ''} placeholder="comma separated" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Status<input name="status" defaultValue={editingMovie.status || ''} placeholder="e.g. Released" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Budget<input name="budget" type="number" defaultValue={editingMovie.budget ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Revenue<input name="revenue" type="number" defaultValue={editingMovie.revenue ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">TMDB ID<input name="tmdbId" type="number" defaultValue={editingMovie.tmdbId ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">IMDB ID<input name="imdbId" defaultValue={editingMovie.imdbId || ''} placeholder="tt..." className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Popularity<input name="popularity" type="number" step="0.1" defaultValue={editingMovie.popularity ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Vote Count<input name="voteCount" type="number" defaultValue={editingMovie.voteCount ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        
-        <div className="flex items-center gap-4 flex-wrap">
-          <label className="flex items-center gap-1.5 text-[11px] text-white/40">
-            <input name="isTrending" type="checkbox" defaultChecked={editingMovie.isTrending} className="accent-cinema-red" /> Trending
+
+        {mediaType === 'movie' ? (
+          <label className="flex flex-col gap-1 text-[11px] text-white/40">
+            Stream URL
+            <input
+              name="streamUrl"
+              value={streamUrlText}
+              onChange={(e) => {
+                const val = e.target.value
+                setStreamUrlText(val)
+                
+                const trimmed = val.trim()
+                if (trimmed.includes('streamxylospace') && (trimmed.includes('/d/') || trimmed.includes('/download/'))) {
+                  setStreamUrlText(normalizeStreamUrl(trimmed))
+                } else if (/^[a-zA-Z0-9]{12}$/.test(trimmed)) {
+                  setStreamUrlText(normalizeStreamUrl(trimmed))
+                }
+              }}
+              onBlur={() => {
+                if (streamUrlText.trim()) {
+                  setStreamUrlText(normalizeStreamUrl(streamUrlText))
+                }
+              }}
+              className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+            />
           </label>
-          <label className="flex items-center gap-1.5 text-[11px] text-white/40">
-            <input name="isFeatured" type="checkbox" defaultChecked={editingMovie.isFeatured} className="accent-cinema-red" /> Featured
-          </label>
-          <label className="flex items-center gap-1.5 text-[11px] text-white/40">
-            <input name="comingSoon" type="checkbox" defaultChecked={editingMovie.comingSoon} className="accent-cinema-red" /> Coming Soon
-          </label>
-        </div>
-        
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Type<select name="type" defaultValue={editingMovie.type || 'movie'} className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5">
-          <option value="movie">Movie</option>
-          <option value="series">Series</option>
-        </select></label>
+        ) : (
+          <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 bg-black/20 p-4 rounded-lg border border-white/[0.05] mt-2">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="text-[12px] font-semibold text-white/80">Seasons & Episodes Manager</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSeasonNum = seasonsList.length + 1
+                    setSeasonsList([...seasonsList, { season: newSeasonNum, episodes: [{ episode: 1, url: '' }] }])
+                    setActiveSeasonIndex(seasonsList.length)
+                  }}
+                  className="px-2 py-1 bg-green-600/20 text-green-400 text-[10px] rounded hover:bg-green-600/30 font-medium"
+                >
+                  + Add Season
+                </button>
+                {seasonsList.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Remove Season ${seasonsList.length}?`)) {
+                        const newList = seasonsList.slice(0, -1)
+                        setSeasonsList(newList)
+                        if (activeSeasonIndex >= newList.length) {
+                          setActiveSeasonIndex(newList.length - 1)
+                        }
+                      }
+                    }}
+                    className="px-2 py-1 bg-cinema-red/20 text-cinema-red text-[10px] rounded hover:bg-cinema-red/30 font-medium"
+                  >
+                    - Remove Season
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-white/[0.04]">
+              {seasonsList.map((s, idx) => (
+                <button
+                  key={s.season}
+                  type="button"
+                  onClick={() => setActiveSeasonIndex(idx)}
+                  className={`px-3 py-1 rounded text-[11px] font-medium shrink-0 transition-colors ${activeSeasonIndex === idx ? 'bg-cinema-red text-white' : 'bg-cinema-800 text-white/50 hover:text-white'}`}
+                >
+                  Season {s.season}
+                </button>
+              ))}
+            </div>
+
+            {seasonsList[activeSeasonIndex] && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-white/40 font-medium">Episodes ({seasonsList[activeSeasonIndex].episodes.length})</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = [...seasonsList]
+                        const activeSeas = updated[activeSeasonIndex]
+                        const nextEpNum = activeSeas.episodes.length + 1
+                        activeSeas.episodes.push({ episode: nextEpNum, url: '' })
+                        setSeasonsList(updated)
+                      }}
+                      className="px-2 py-0.5 bg-green-600/20 text-green-400 text-[10px] rounded hover:bg-green-600/30 font-medium"
+                    >
+                      + Add Episode
+                    </button>
+                    {seasonsList[activeSeasonIndex].episodes.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...seasonsList]
+                          updated[activeSeasonIndex].episodes.pop()
+                          setSeasonsList(updated)
+                        }}
+                        className="px-2 py-0.5 bg-cinema-red/20 text-cinema-red text-[10px] rounded hover:bg-cinema-red/30 font-medium"
+                      >
+                        - Remove Episode
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                  {seasonsList[activeSeasonIndex].episodes.map((ep) => (
+                    <div key={ep.episode} className="flex items-center gap-2 bg-cinema-800/40 p-1.5 rounded border border-white/[0.04]">
+                      <span className="text-[10px] font-semibold text-white/50 shrink-0 w-8 text-center bg-white/5 py-0.5 rounded">Ep {ep.episode}</span>
+                      <input
+                        type="text"
+                        value={ep.url}
+                        placeholder="Stream URL / code..."
+                        onChange={(e) => {
+                          const val = e.target.value
+                          const updated = [...seasonsList]
+                          updated[activeSeasonIndex].episodes = updated[activeSeasonIndex].episodes.map((item) =>
+                            item.episode === ep.episode ? { ...item, url: val } : item
+                          )
+                          setSeasonsList(updated)
+                        }}
+                        onBlur={() => {
+                          if (ep.url.trim()) {
+                            const normalized = normalizeStreamUrl(ep.url)
+                            const updated = [...seasonsList]
+                            updated[activeSeasonIndex].episodes = updated[activeSeasonIndex].episodes.map((item) =>
+                              item.episode === ep.episode ? { ...item, url: normalized } : item
+                            )
+                            setSeasonsList(updated)
+                          }
+                        }}
+                        className="flex-1 bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex justify-end gap-2">
         <button type="button" onClick={closeForm} className="px-3 py-1.5 text-[12px] text-white/40 hover:text-white">Cancel</button>

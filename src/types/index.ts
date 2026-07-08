@@ -91,6 +91,7 @@ export interface TmdbMovieDetail {
   episode_run_time?: number[]
   number_of_episodes?: number
   number_of_seasons?: number
+  seasons?: { season_number: number; episode_count: number; name: string }[]
   created_by?: { name: string }[]
   vote_average: number
   vote_count: number
