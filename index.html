@@ -22,6 +22,11 @@
             var now = Date.now();
             if (!lastReload || (now - Number(lastReload) > 15000)) {
               sessionStorage.setItem('asset_fail_reload', String(now));
+              var reloadWithBuster = function() {
+                var target = new URL(window.location.href);
+                target.searchParams.set('cv_update', String(Date.now()));
+                window.location.replace(target.toString());
+              };
               if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(function(regs) {
                   regs.forEach(function(reg) { reg.unregister(); });
@@ -29,19 +34,19 @@
                     caches.keys().then(function(keys) {
                       var promises = keys.map(function(key) { return caches.delete(key); });
                       Promise.all(promises).then(function() {
-                        window.location.reload();
+                        reloadWithBuster();
                       });
                     }).catch(function() {
-                      window.location.reload();
+                      reloadWithBuster();
                     });
                   } else {
-                    window.location.reload();
+                    reloadWithBuster();
                   }
                 }).catch(function() {
-                  window.location.reload();
+                  reloadWithBuster();
                 });
               } else {
-                window.location.reload();
+                reloadWithBuster();
               }
             } else {
               console.error('Asset load failed repeatedly. Stopping reload loop.');

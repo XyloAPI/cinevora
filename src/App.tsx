@@ -26,6 +26,12 @@ async function forceHardUpdate() {
   }
 }
 
+function reloadWithCacheBuster() {
+  const url = new URL(window.location.href)
+  url.searchParams.set('cv_update', String(Date.now()))
+  window.location.replace(url.toString())
+}
+
 function lazyWithRetry(importFunc: () => Promise<any>) {
   return lazy(async () => {
     try {
@@ -36,7 +42,7 @@ function lazyWithRetry(importFunc: () => Promise<any>) {
       if (!lastReload || now - Number(lastReload) > 10000) {
         sessionStorage.setItem('chunk_reload_time', String(now))
         await forceHardUpdate()
-        window.location.reload()
+        reloadWithCacheBuster()
         return { default: () => null }
       }
       throw error
@@ -88,7 +94,7 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
       if (!lastReload || now - Number(lastReload) > 10000) {
         sessionStorage.setItem('chunk_reload_time', String(now))
         forceHardUpdate().finally(() => {
-          window.location.reload()
+          reloadWithCacheBuster()
         })
       }
     }
@@ -106,7 +112,7 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
             sessionStorage.removeItem('chunk_reload_time')
             resetErrorBoundary()
             forceHardUpdate().finally(() => {
-              window.location.reload()
+              reloadWithCacheBuster()
             })
           }}
           className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors"
@@ -119,6 +125,14 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('cv_update')) {
+      url.searchParams.delete('cv_update')
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash)
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-cinema-950 text-white">
       <ScrollToTop />
