@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom'
 import { Routes, Route, Outlet } from 'react-router-dom'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { Toaster } from 'sonner'
-import { ReactLenis } from 'lenis/react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { HeroSkeleton } from '@/components/shared/Skeleton'
@@ -121,64 +120,62 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
 export default function App() {
   return (
-    <ReactLenis root>
-      <div className="min-h-screen bg-cinema-950 text-white">
-        <ScrollToTop />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(255,255,255,0.06)' },
-          }}
-        />
-        <Routes>
-          <Route path="/watch/:slug" element={
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <Suspense fallback={<PageFallback />}>
-                <WatchPage />
-              </Suspense>
-            </ErrorBoundary>
-          } />
-          <Route path="/trailer/:slug" element={
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <Suspense fallback={<PageFallback />}>
-                <TrailerPage />
-              </Suspense>
-            </ErrorBoundary>
-          } />
-          <Route path="/buahlilguanteng" element={
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <Suspense fallback={<PageFallback />}>
-                <AdminPanel />
-              </Suspense>
-            </ErrorBoundary>
-          } />
-          <Route element={
-            <>
-              <Navbar />
-              <main>
-                <ErrorBoundary FallbackComponent={ErrorFallback}>
-                  <Suspense fallback={<PageFallback />}>
-                    <Outlet />
-                  </Suspense>
-                </ErrorBoundary>
-              </main>
-              <Footer />
-            </>
-          }>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/trending" element={<TrendingPage />} />
-            <Route path="/movies" element={<MoviesPage />} />
-            <Route path="/series" element={<SeriesPage />} />
-            <Route path="/genres" element={<GenresPage />} />
-            <Route path="/movie/:slug" element={<MovieDetailPage />} />
-            <Route path="/faq" element={<FAQPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="*" element={<HomePage />} />
-          </Route>
-        </Routes>
-      </div>
-    </ReactLenis>
+    <div className="min-h-screen bg-cinema-950 text-white">
+      <ScrollToTop />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: { background: '#1a1a2e', color: '#fff', border: '1px solid rgba(255,255,255,0.06)' },
+        }}
+      />
+      <Routes>
+        <Route path="/watch/:slug" element={
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Suspense fallback={<PageFallback />}>
+              <WatchPage />
+            </Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/trailer/:slug" element={
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Suspense fallback={<PageFallback />}>
+              <TrailerPage />
+            </Suspense>
+          </ErrorBoundary>
+        } />
+        <Route path="/buahlilguanteng" element={
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Suspense fallback={<PageFallback />}>
+              <AdminPanel />
+            </Suspense>
+          </ErrorBoundary>
+        } />
+        <Route element={
+          <>
+            <Navbar />
+            <main>
+              <ErrorBoundary FallbackComponent={ErrorFallback}>
+                <Suspense fallback={<PageFallback />}>
+                  <Outlet />
+                </Suspense>
+              </ErrorBoundary>
+            </main>
+            <Footer />
+          </>
+        }>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/trending" element={<TrendingPage />} />
+          <Route path="/movies" element={<MoviesPage />} />
+          <Route path="/series" element={<SeriesPage />} />
+          <Route path="/genres" element={<GenresPage />} />
+          <Route path="/movie/:slug" element={<MovieDetailPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="*" element={<HomePage />} />
+        </Route>
+      </Routes>
+    </div>
   )
 }
