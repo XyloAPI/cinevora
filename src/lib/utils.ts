@@ -16,44 +16,11 @@ export function getDownloadUrl(streamUrl: string | null | undefined): string | n
   if (!streamUrl) return null
   try {
     const url = new URL(streamUrl)
-    
-    // 1. Handle Pixeldrain links (including mirrors/subdomains containing pixeldrain)
-    if (url.hostname.includes('pixeldrain')) {
-      const segments = url.pathname.split('/').filter(Boolean)
-      
-      // If it's already /api/file/{id}
-      if (url.pathname.includes('/api/file/')) {
-        return streamUrl
-      }
-      
-      // If it's /u/{id}
-      const uIndex = segments.findIndex((s) => s === 'u')
-      if (uIndex !== -1 && segments[uIndex + 1]) {
-        return `${url.origin}/api/file/${segments[uIndex + 1]}`
-      }
-      
-      // Fallback: if last segment is a 8-character alphanumeric string (common for pixeldrain IDs)
-      const lastSegment = segments[segments.length - 1]
-      if (lastSegment && /^[a-zA-Z0-9]{8}$/.test(lastSegment)) {
-        return `${url.origin}/api/file/${lastSegment}`
-      }
-    }
-
-    // 2. Handle StreamXyloSpace / standard /e/ stream links
     const segments = url.pathname.split('/').filter(Boolean)
     const eIndex = segments.findIndex((s) => s === 'e')
     const streamId = eIndex !== -1 && segments[eIndex + 1] ? segments[eIndex + 1] : null
-    
-    if (streamId) {
-      return `${url.origin}/download/${streamId}`
-    }
-
-    // 3. Fallback for direct media links
-    if (url.pathname.endsWith('.mp4') || url.pathname.endsWith('.mkv')) {
-      return streamUrl
-    }
-    
-    return null
+    if (!streamId) return null
+    return `${url.origin}/download/${streamId}`
   } catch {
     return null
   }
