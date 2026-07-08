@@ -17,9 +17,10 @@ export async function fetchGenres(): Promise<TmdbGenre[]> {
   return data.genres
 }
 
-export async function searchMovies(query: string, page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
+export async function searchMovies(query: string, type: 'movie' | 'series' = 'movie', page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
+  const endpointType = type === 'series' ? 'tv' : 'movie'
   const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number }>(
-    `${API_BASE}/tmdb/search/movie?query=${encodeURIComponent(query)}&page=${page}`
+    `${API_BASE}/tmdb/search/${endpointType}?query=${encodeURIComponent(query)}&page=${page}`
   )
   return { results: data.results, total: data.total_results, page: data.page }
 }
@@ -41,17 +42,20 @@ export async function getMoviesByCategory(
   return { results: data.results, total: data.total_results, page: data.page }
 }
 
-export async function getMovieDetail(tmdbId: number): Promise<TmdbMovieDetail> {
-  return fetchJson<TmdbMovieDetail>(`${API_BASE}/tmdb/movie/${tmdbId}`)
+export async function getMovieDetail(tmdbId: number, type: 'movie' | 'series' = 'movie'): Promise<TmdbMovieDetail> {
+  const pathType = type === 'series' ? 'tv' : 'movie'
+  return fetchJson<TmdbMovieDetail>(`${API_BASE}/tmdb/${pathType}/${tmdbId}`)
 }
 
-export async function getMovieVideos(tmdbId: number): Promise<TmdbVideo[]> {
-  const data = await fetchJson<{ results: TmdbVideo[] }>(`${API_BASE}/tmdb/movie/${tmdbId}/videos`)
+export async function getMovieVideos(tmdbId: number, type: 'movie' | 'series' = 'movie'): Promise<TmdbVideo[]> {
+  const pathType = type === 'series' ? 'tv' : 'movie'
+  const data = await fetchJson<{ results: TmdbVideo[] }>(`${API_BASE}/tmdb/${pathType}/${tmdbId}/videos`)
   return data.results
 }
 
-export async function getMovieCredits(tmdbId: number): Promise<TmdbCredit> {
-  return fetchJson<TmdbCredit>(`${API_BASE}/tmdb/movie/${tmdbId}/credits`)
+export async function getMovieCredits(tmdbId: number, type: 'movie' | 'series' = 'movie'): Promise<TmdbCredit> {
+  const pathType = type === 'series' ? 'tv' : 'movie'
+  return fetchJson<TmdbCredit>(`${API_BASE}/tmdb/${pathType}/${tmdbId}/credits`)
 }
 
 export interface TmdbLogo {
@@ -62,8 +66,9 @@ export interface TmdbLogo {
   iso_639_1: string | null
 }
 
-export async function fetchMovieImages(tmdbId: number): Promise<{ logos: TmdbLogo[] }> {
-  const data = await fetchJson<{ logos: TmdbLogo[] }>(`${API_BASE}/tmdb/movie/${tmdbId}/images`)
+export async function fetchMovieImages(tmdbId: number, type: 'movie' | 'series' = 'movie'): Promise<{ logos: TmdbLogo[] }> {
+  const pathType = type === 'series' ? 'tv' : 'movie'
+  const data = await fetchJson<{ logos: TmdbLogo[] }>(`${API_BASE}/tmdb/${pathType}/${tmdbId}/images`)
   return { logos: data.logos }
 }
 
@@ -91,15 +96,15 @@ export function getDirector(credits: TmdbCredit): string | undefined {
   return credits.crew.find((c) => c.job === 'Director')?.name
 }
 
-export async function enrichMovie(tmdbId: number): Promise<{
+export async function enrichMovie(tmdbId: number, type: 'movie' | 'series' = 'movie'): Promise<{
   detail: TmdbMovieDetail
   videos: TmdbVideo[]
   credits: TmdbCredit
 }> {
   const [detail, videos, credits] = await Promise.all([
-    getMovieDetail(tmdbId),
-    getMovieVideos(tmdbId),
-    getMovieCredits(tmdbId),
+    getMovieDetail(tmdbId, type),
+    getMovieVideos(tmdbId, type),
+    getMovieCredits(tmdbId, type),
   ])
   return { detail, videos, credits }
 }
@@ -109,6 +114,7 @@ export function mapTmdbToMovie(
   videos: TmdbVideo[],
   credits: TmdbCredit,
   genreNames: string[],
+  type: 'movie' | 'series' = 'movie',
 ): {
   title: string
   year: number
@@ -122,6 +128,8 @@ export function mapTmdbToMovie(
   duration: string | null
   runtime: number | null
   type: 'movie' | 'series'
+  episodes: number | undefined
+  seasons: number | undefined
   tmdbId: number
   imdbId: string | undefined
   tagline: string
@@ -140,35 +148,43 @@ export function mapTmdbToMovie(
   isFeatured: boolean
   comingSoon: boolean
 } {
-  const year = detail.release_date ? new Date(detail.release_date).getFullYear() : new Date().getFullYear()
-  const runtimeMins = detail.runtime
+  const releaseDate = detail.release_date || detail.first_air_date || ''
+  const year = releaseDate ? new Date(releaseDate).getFullYear() : new Date().getFullYear()
+  
+  let runtimeMins = detail.runtime
+  if (type === 'series' && detail.episode_run_time && detail.episode_run_time.length > 0) {
+    runtimeMins = detail.episode_run_time[0]
+  }
+  
   const hours = runtimeMins ? Math.floor(runtimeMins / 60) : 0
   const mins = runtimeMins ? runtimeMins % 60 : 0
   const durationStr = runtimeMins ? `${hours}h ${mins}m` : null
 
   return {
-    title: detail.title,
+    title: detail.title || detail.name || '',
     year,
     rating: detail.vote_average,
     genre: genreNames.length ? genreNames : detail.genres.map((g) => g.name),
     poster: imgPath(detail.poster_path),
     backdrop: imgOriginal(detail.backdrop_path),
     synopsis: detail.overview,
-    releaseDate: detail.release_date || '',
+    releaseDate,
     quality: null,
     duration: durationStr,
-    runtime: runtimeMins,
-    type: 'movie',
+    runtime: runtimeMins || null,
+    type,
+    episodes: detail.number_of_episodes,
+    seasons: detail.number_of_seasons,
     tmdbId: detail.id,
     imdbId: detail.imdb_id || undefined,
     tagline: detail.tagline || '',
-    budget: detail.budget,
-    revenue: detail.revenue,
+    budget: detail.budget || 0,
+    revenue: detail.revenue || 0,
     originalLanguage: detail.original_language,
     popularity: detail.popularity,
     voteCount: detail.vote_count,
     homepage: detail.homepage || undefined,
-    director: getDirector(credits),
+    director: getDirector(credits) || detail.created_by?.[0]?.name,
     cast: getCast(credits),
     trailerUrl: trailerUrl(videos),
     productionCompanies: detail.production_companies.map((c) => c.name),

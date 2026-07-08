@@ -80,27 +80,33 @@ export interface TmdbMovieResult {
 
 export interface TmdbMovieDetail {
   id: number
-  title: string
-  original_title: string
+  title?: string
+  name?: string
+  original_title?: string
   overview: string
   tagline: string
-  release_date: string
-  runtime: number | null
+  release_date?: string
+  first_air_date?: string
+  runtime?: number | null
+  episode_run_time?: number[]
+  number_of_episodes?: number
+  number_of_seasons?: number
+  created_by?: { name: string }[]
   vote_average: number
   vote_count: number
   popularity: number
   poster_path: string | null
   backdrop_path: string | null
-  budget: number
-  revenue: number
+  budget?: number
+  revenue?: number
   homepage: string | null
-  imdb_id: string | null
+  imdb_id?: string | null
   original_language: string
   adult: boolean
   status: string
   genres: { id: number; name: string }[]
   production_companies: { id: number; name: string; logo_path: string | null; origin_country: string }[]
-  belongs_to_collection: { id: number; name: string; poster_path: string | null } | null
+  belongs_to_collection?: { id: number; name: string; poster_path: string | null } | null
 }
 
 export interface TmdbVideo {

@@ -48,6 +48,7 @@ export default function AdminPanel() {
   const { data: genresData } = useGenresHook()
 
   const [tmdbSearch, setTmdbSearch] = useState('')
+  const [tmdbType, setTmdbType] = useState<'movie' | 'series'>('movie')
   const [tmdbResults, setTmdbResults] = useState<TmdbMovieResult[]>([])
   const [tmdbSearching, setTmdbSearching] = useState(false)
   const [tmdbTrending, setTmdbTrending] = useState<TmdbMovieResult[]>([])
@@ -117,7 +118,7 @@ export default function AdminPanel() {
     if (!tmdbSearch.trim()) return
     setTmdbSearching(true)
     try {
-      const res = await tmdb.searchMovies(tmdbSearch)
+      const res = await tmdb.searchMovies(tmdbSearch, tmdbType)
       setTmdbResults(res.results || [])
     } catch {
       toast.error('Search failed')
@@ -133,10 +134,10 @@ export default function AdminPanel() {
       return next
     })
     try {
-      const { detail, videos, credits } = await tmdb.enrichMovie(tmdbId)
+      const { detail, videos, credits } = await tmdb.enrichMovie(tmdbId, tmdbType)
       const genreNames = detail.genres.map((g) => g.name)
-      const mapped = tmdb.mapTmdbToMovie(detail, videos, credits, genreNames)
-      const { logos } = await tmdb.fetchMovieImages(tmdbId)
+      const mapped = tmdb.mapTmdbToMovie(detail, videos, credits, genreNames, tmdbType)
+      const { logos } = await tmdb.fetchMovieImages(tmdbId, tmdbType)
       const logoUrl = tmdb.logoUrl(logos)
 
       // Open edit form with prefilled data instead of directly saving
@@ -156,7 +157,9 @@ export default function AdminPanel() {
         releaseDate: mapped.releaseDate || undefined,
         quality: mapped.quality || undefined,
         duration: mapped.duration || undefined,
-        type: 'movie',
+        type: tmdbType,
+        episodes: mapped.episodes,
+        seasons: mapped.seasons,
         tmdbId: mapped.tmdbId,
         imdbId: mapped.imdbId || undefined,
         tagline: mapped.tagline || undefined,
@@ -311,6 +314,8 @@ export default function AdminPanel() {
                 tmdbRegion={tmdbRegion}
                 setTmdbRegion={setTmdbRegion}
                 loadingCategoryMovies={loadingCategoryMovies}
+                tmdbType={tmdbType}
+                setTmdbType={setTmdbType}
               />
             )}
 

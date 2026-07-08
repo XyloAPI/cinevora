@@ -17,6 +17,8 @@ interface TmdbPanelProps {
   tmdbRegion: string
   setTmdbRegion: (val: string) => void
   loadingCategoryMovies: boolean
+  tmdbType: 'movie' | 'series'
+  setTmdbType: (val: 'movie' | 'series') => void
 }
 
 export default function TmdbPanel({
@@ -35,6 +37,8 @@ export default function TmdbPanel({
   tmdbRegion,
   setTmdbRegion,
   loadingCategoryMovies,
+  tmdbType,
+  setTmdbType,
 }: TmdbPanelProps) {
   return (
     <div className="bg-cinema-900 border border-white/[0.06] rounded-lg p-4 mb-4">
@@ -45,9 +49,17 @@ export default function TmdbPanel({
         <button onClick={() => setShowTmdbPanel(false)} className="text-[11px] text-white/30 hover:text-white">Close</button>
       </div>
       <div className="flex gap-2 mb-3">
+        <select
+          value={tmdbType}
+          onChange={(e) => setTmdbType(e.target.value as 'movie' | 'series')}
+          className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none"
+        >
+          <option value="movie">Movie</option>
+          <option value="series">Series</option>
+        </select>
         <input value={tmdbSearch} onChange={(e) => setTmdbSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleTmdbSearch()}
-          placeholder="Search TMDB movies..."
+          placeholder={tmdbType === 'series' ? 'Search TMDB series...' : 'Search TMDB movies...'}
           className="flex-1 bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50" />
         <button onClick={handleTmdbSearch} disabled={tmdbSearching}
           className="px-3 py-1.5 bg-cinema-red text-white text-[12px] rounded hover:bg-cinema-red-dark disabled:opacity-50 flex items-center gap-1">
