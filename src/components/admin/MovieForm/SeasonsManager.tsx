@@ -1,4 +1,5 @@
 import React from 'react'
+import { IconX } from '@tabler/icons-react'
 
 interface Episode {
   episode: number
@@ -33,7 +34,10 @@ export default function SeasonsManager({
           <button
             type="button"
             onClick={() => {
-              const newSeasonNum = seasonsList.length + 1
+              const maxSeason = seasonsList.length > 0
+                ? Math.max(...seasonsList.map((s) => s.season))
+                : 0
+              const newSeasonNum = maxSeason + 1
               setSeasonsList([...seasonsList, { season: newSeasonNum, episodes: [{ episode: 1, url: '' }] }])
               setActiveSeasonIndex(seasonsList.length)
             }}
@@ -45,7 +49,7 @@ export default function SeasonsManager({
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Remove Season ${seasonsList.length}?`)) {
+                if (confirm(`Remove Season ${seasonsList[seasonsList.length - 1].season}?`)) {
                   const newList = seasonsList.slice(0, -1)
                   setSeasonsList(newList)
                   if (activeSeasonIndex >= newList.length) {
@@ -88,7 +92,10 @@ export default function SeasonsManager({
                 onClick={() => {
                   const updated = [...seasonsList]
                   const activeSeas = updated[activeSeasonIndex]
-                  const nextEpNum = activeSeas.episodes.length + 1
+                  const maxEp = activeSeas.episodes.length > 0
+                    ? Math.max(...activeSeas.episodes.map((e) => e.episode))
+                    : 0
+                  const nextEpNum = maxEp >= 0 ? maxEp + 1 : 1
                   activeSeas.episodes.push({ episode: nextEpNum, url: '' })
                   setSeasonsList(updated)
                 }}
@@ -96,28 +103,26 @@ export default function SeasonsManager({
               >
                 + Add Episode
               </button>
-              {seasonsList[activeSeasonIndex].episodes.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = [...seasonsList]
-                    updated[activeSeasonIndex].episodes.pop()
-                    setSeasonsList(updated)
-                  }}
-                  className="px-2 py-0.5 bg-cinema-red/20 text-cinema-red text-[10px] rounded hover:bg-cinema-red/30 font-medium"
-                >
-                  - Remove Episode
-                </button>
-              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto pr-1">
-            {seasonsList[activeSeasonIndex].episodes.map((ep) => (
-              <div key={ep.episode} className="flex items-center gap-2 bg-cinema-800/40 p-1.5 rounded border border-white/[0.04]">
-                <span className="text-[10px] font-semibold text-white/50 shrink-0 w-8 text-center bg-white/5 py-0.5 rounded border border-white/[0.02]">
-                  Ep {ep.episode}
-                </span>
+            {seasonsList[activeSeasonIndex].episodes.map((ep, epIdx) => (
+              <div key={epIdx} className="flex items-center gap-1.5 bg-cinema-800/40 p-1.5 rounded border border-white/[0.04]">
+                <div className="flex items-center bg-white/5 rounded border border-white/[0.02] px-1.5 py-0.5 shrink-0 gap-0.5">
+                  <span className="text-[9px] font-bold text-white/30 uppercase">Ep</span>
+                  <input
+                    type="number"
+                    value={ep.episode}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      const updated = [...seasonsList]
+                      updated[activeSeasonIndex].episodes[epIdx].episode = val
+                      setSeasonsList(updated)
+                    }}
+                    className="w-8 bg-transparent text-white text-[11px] font-bold text-center outline-none focus:text-cinema-red"
+                  />
+                </div>
                 <input
                   type="text"
                   value={ep.url}
@@ -125,23 +130,31 @@ export default function SeasonsManager({
                   onChange={(e) => {
                     const val = e.target.value
                     const updated = [...seasonsList]
-                    updated[activeSeasonIndex].episodes = updated[activeSeasonIndex].episodes.map((item) =>
-                      item.episode === ep.episode ? { ...item, url: val } : item
-                    )
+                    updated[activeSeasonIndex].episodes[epIdx].url = val
                     setSeasonsList(updated)
                   }}
                   onBlur={() => {
                     if (ep.url.trim()) {
                       const normalized = normalizeStreamUrl(ep.url)
                       const updated = [...seasonsList]
-                      updated[activeSeasonIndex].episodes = updated[activeSeasonIndex].episodes.map((item) =>
-                        item.episode === ep.episode ? { ...item, url: normalized } : item
-                      )
+                      updated[activeSeasonIndex].episodes[epIdx].url = normalized
                       setSeasonsList(updated)
                     }
                   }}
                   className="flex-1 bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
                 />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = [...seasonsList]
+                    updated[activeSeasonIndex].episodes.splice(epIdx, 1)
+                    setSeasonsList(updated)
+                  }}
+                  className="text-white/20 hover:text-cinema-red p-1 transition-colors shrink-0"
+                  title="Delete Episode"
+                >
+                  <IconX size={12} />
+                </button>
               </div>
             ))}
           </div>
