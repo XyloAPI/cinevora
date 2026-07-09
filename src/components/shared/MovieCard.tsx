@@ -16,7 +16,7 @@ interface MovieCardProps {
 export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth, fetchPriority }: MovieCardProps) {
   if (compact) {
     return (
-      <Link to={`/movie/${movie.slug}`} className={`group block ${fillWidth ? 'w-full self-start' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
+      <Link to={`/movie/${movie.slug}`} className={`group block relative z-10 hover:z-30 ${fillWidth ? 'w-full self-start' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
         <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
           <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
             <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
@@ -60,7 +60,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
   }
 
   return (
-    <Link to={`/movie/${movie.slug}`} className="group block">
+    <Link to={`/movie/${movie.slug}`} className="group block relative z-10 hover:z-30">
       <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
         <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
           <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />

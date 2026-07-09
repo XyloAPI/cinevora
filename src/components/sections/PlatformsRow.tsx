@@ -3,50 +3,50 @@ import React from 'react'
 interface PlatformItem {
   id: string
   name: string
-  color: string
   targetRowId?: string
   logoPlaceholderText: string
+  glowColor: string
 }
 
 const platforms: PlatformItem[] = [
   {
     id: 'netflix',
     name: 'Netflix',
-    color: 'from-[#E50914]/20 to-[#E50914]/5 border-[#E50914]/30 text-[#E50914]',
     targetRowId: 'netflix-row',
-    logoPlaceholderText: 'NETFLIX',
+    logoPlaceholderText: 'N',
+    glowColor: 'from-[#E50914]/25 via-[#E50914]/5 to-transparent',
   },
   {
     id: 'disney',
     name: 'Disney+',
-    color: 'from-[#0063e5]/20 to-[#30b9e3]/5 border-[#0063e5]/30 text-[#30b9e3]',
     targetRowId: 'disney-row',
-    logoPlaceholderText: 'Disney+',
+    logoPlaceholderText: 'D+',
+    glowColor: 'from-[#0063e5]/30 via-[#30b9e3]/5 to-transparent',
   },
   {
     id: 'viu',
     name: 'Viu',
-    color: 'from-[#FFC20E]/20 to-[#FFC20E]/5 border-[#FFC20E]/30 text-[#FFC20E]',
     targetRowId: 'viu-row',
-    logoPlaceholderText: 'VIU',
+    logoPlaceholderText: 'Viu',
+    glowColor: 'from-[#FFC20E]/20 via-[#FFC20E]/5 to-transparent',
   },
   {
     id: 'prime',
     name: 'Prime Video',
-    color: 'from-[#00A8E1]/20 to-[#00A8E1]/5 border-[#00A8E1]/30 text-[#00A8E1]',
-    logoPlaceholderText: 'PRIME',
+    logoPlaceholderText: 'PV',
+    glowColor: 'from-[#00A8E1]/20 via-[#00A8E1]/5 to-transparent',
   },
   {
     id: 'hbo',
     name: 'HBO Max',
-    color: 'from-[#9933FF]/20 to-[#9933FF]/5 border-[#9933FF]/30 text-[#9933FF]',
-    logoPlaceholderText: 'HBO MAX',
+    logoPlaceholderText: 'HBO',
+    glowColor: 'from-[#9933FF]/20 via-[#9933FF]/5 to-transparent',
   },
   {
     id: 'apple',
     name: 'Apple TV+',
-    color: 'from-[#ffffff]/20 to-[#ffffff]/5 border-[#ffffff]/20 text-white',
-    logoPlaceholderText: 'Apple TV+',
+    logoPlaceholderText: 'Apple',
+    glowColor: 'from-white/15 via-white/5 to-transparent',
   },
 ]
 
@@ -54,7 +54,7 @@ export default function PlatformsRow() {
   function handleScrollToRow(rowId: string) {
     const element = document.getElementById(rowId)
     if (element) {
-      const headerOffset = 70
+      const headerOffset = 90
       const elementPosition = element.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset
 
@@ -66,8 +66,16 @@ export default function PlatformsRow() {
   }
 
   return (
-    <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="flex items-center gap-3 overflow-x-auto pb-3 scroll-hidden select-none">
+    <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 relative z-20">
+      {/* Title */}
+      <div className="mb-4">
+        <h2 className="text-[11px] sm:text-xs font-bold tracking-[0.2em] text-white/30 uppercase">
+          Pilih Platform
+        </h2>
+      </div>
+
+      {/* Grid/Row of platform icons */}
+      <div className="flex items-center justify-start sm:justify-start md:justify-center gap-4 overflow-x-auto pb-4 scroll-hidden select-none">
         {platforms.map((p) => {
           const isClickable = !!p.targetRowId
           
@@ -76,23 +84,30 @@ export default function PlatformsRow() {
               key={p.id}
               onClick={() => p.targetRowId && handleScrollToRow(p.targetRowId)}
               disabled={!isClickable}
-              className={`w-28 h-14 sm:w-36 sm:h-18 md:w-44 md:h-22 shrink-0 rounded-xl bg-gradient-to-br bg-cinema-900/40 backdrop-blur border flex items-center justify-center transition-all duration-300 relative group overflow-hidden ${
+              className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 rounded-2xl bg-gradient-to-b from-[#18191e]/90 to-[#0e0f12]/95 border flex items-center justify-center transition-all duration-300 relative z-10 hover:z-30 group overflow-hidden ${
                 isClickable 
-                  ? `${p.color} hover:scale-105 active:scale-95 cursor-pointer shadow-lg hover:shadow-black/45` 
-                  : 'border-white/[0.04] text-white/20 cursor-not-allowed opacity-60'
+                  ? 'border-white/[0.08] hover:border-white/30 hover:scale-105 cursor-pointer shadow-lg hover:shadow-black/80' 
+                  : 'border-white/[0.03] opacity-25 cursor-not-allowed'
               }`}
             >
-              {/* Radial glow on hover */}
+              {/* Radial glow background on hover */}
               {isClickable && (
-                <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <div className={`absolute inset-0 bg-gradient-to-b ${p.glowColor} opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+              )}
+              
+              {/* Subtle top border highlight */}
+              {isClickable && (
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.2] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               )}
 
-              {/* Logo Image */}
-              <div className="flex flex-col items-center justify-center p-2">
+              {/* Logo Container */}
+              <div className="w-full h-full flex items-center justify-center p-3 relative z-10">
                 <img
                   src={`/assets/logos/${p.id}.avif`}
-                  className={`h-5 sm:h-6 md:h-7 object-contain transition-all duration-300 ${
-                    isClickable ? 'opacity-85 group-hover:opacity-100 group-hover:scale-105' : 'opacity-30'
+                  className={`w-[85%] h-[85%] object-contain transition-all duration-500 ${
+                    isClickable 
+                      ? 'opacity-85 group-hover:opacity-100 group-hover:scale-110' 
+                      : 'opacity-40 grayscale'
                   }`}
                   alt={p.name}
                   onError={(e) => {
@@ -105,15 +120,10 @@ export default function PlatformsRow() {
                   }}
                 />
 
-                <span className="logo-text-fallback hidden text-[12px] sm:text-sm md:text-base font-black tracking-widest uppercase opacity-80">
+                {/* Text Fallback */}
+                <span className="logo-text-fallback hidden text-xs sm:text-sm font-black tracking-widest uppercase opacity-70">
                   {p.logoPlaceholderText}
                 </span>
-                
-                {isClickable && (
-                  <span className="text-[8px] opacity-35 mt-1.5 group-hover:opacity-75 transition-opacity font-semibold tracking-wider uppercase text-white/90">
-                    Browse
-                  </span>
-                )}
               </div>
             </button>
           )
