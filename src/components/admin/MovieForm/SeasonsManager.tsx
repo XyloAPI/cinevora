@@ -1,5 +1,5 @@
-import React from 'react'
-import { IconX } from '@tabler/icons-react'
+import React, { useState } from 'react'
+import { IconX, IconGripVertical } from '@tabler/icons-react'
 
 interface Episode {
   episode: number
@@ -26,6 +26,45 @@ export default function SeasonsManager({
   setActiveSeasonIndex,
   normalizeStreamUrl,
 }: SeasonsManagerProps) {
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const [isReadyToDrag, setIsReadyToDrag] = useState<boolean>(false)
+
+  const handleDragStart = (idx: number) => {
+    setDraggedIdx(idx)
+  }
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault()
+    setDragOverIdx(idx)
+  }
+
+  const handleDrop = (idx: number) => {
+    if (draggedIdx === null || draggedIdx === idx) {
+      setDraggedIdx(null)
+      setDragOverIdx(null)
+      return
+    }
+
+    const updated = [...seasonsList]
+    const episodes = [...updated[activeSeasonIndex].episodes]
+
+    // Move episode from draggedIdx to target idx
+    const [moved] = episodes.splice(draggedIdx, 1)
+    episodes.splice(idx, 0, moved)
+
+    updated[activeSeasonIndex].episodes = episodes
+    setSeasonsList(updated)
+    setDraggedIdx(null)
+    setDragOverIdx(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null)
+    setDragOverIdx(null)
+    setIsReadyToDrag(false)
+  }
+
   return (
     <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 bg-black/20 p-4 rounded-lg border border-white/[0.05] mt-2">
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -83,8 +122,9 @@ export default function SeasonsManager({
       {seasonsList[activeSeasonIndex] && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] text-white/40 font-medium">
+            <span className="text-[11px] text-white/40 font-medium col-span-2">
               Episodes ({seasonsList[activeSeasonIndex].episodes.length})
+              <span className="text-[10px] text-white/25 ml-2 font-normal hidden sm:inline">(Drag handle to reorder)</span>
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -106,9 +146,35 @@ export default function SeasonsManager({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[350px] overflow-y-auto pr-1">
             {seasonsList[activeSeasonIndex].episodes.map((ep, epIdx) => (
-              <div key={epIdx} className="flex items-center gap-1.5 bg-cinema-800/40 p-1.5 rounded border border-white/[0.04]">
+              <div
+                key={epIdx}
+                draggable={isReadyToDrag && draggedIdx === epIdx}
+                onDragStart={() => handleDragStart(epIdx)}
+                onDragOver={(e) => handleDragOver(e, epIdx)}
+                onDrop={() => handleDrop(epIdx)}
+                onDragEnd={handleDragEnd}
+                className={`flex items-center gap-1.5 bg-cinema-800/40 p-1.5 rounded border transition-all ${
+                  draggedIdx === epIdx ? 'opacity-40 bg-cinema-800/20' : ''
+                } ${
+                  dragOverIdx === epIdx ? 'border-cinema-red border-dashed scale-[1.01]' : 'border-white/[0.04]'
+                }`}
+              >
+                {/* Drag Handle */}
+                <div
+                  onMouseDown={() => {
+                    setIsReadyToDrag(true)
+                    setDraggedIdx(epIdx)
+                  }}
+                  onMouseUp={() => setIsReadyToDrag(false)}
+                  className="cursor-grab active:cursor-grabbing text-white/20 hover:text-white/60 p-0.5 shrink-0"
+                  title="Drag to reorder"
+                >
+                  <IconGripVertical size={14} />
+                </div>
+
+                {/* Episode label / editor */}
                 <div className="flex items-center bg-white/5 rounded border border-white/[0.02] px-1.5 py-0.5 shrink-0 gap-0.5">
                   <span className="text-[9px] font-bold text-white/30 uppercase">Ep</span>
                   <input
@@ -123,6 +189,8 @@ export default function SeasonsManager({
                     className="w-8 bg-transparent text-white text-[11px] font-bold text-center outline-none focus:text-cinema-red"
                   />
                 </div>
+
+                {/* URL Input */}
                 <input
                   type="text"
                   value={ep.url}
@@ -143,6 +211,8 @@ export default function SeasonsManager({
                   }}
                   className="flex-1 bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
                 />
+
+                {/* Delete button */}
                 <button
                   type="button"
                   onClick={() => {
