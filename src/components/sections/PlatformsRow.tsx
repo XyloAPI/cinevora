@@ -75,7 +75,7 @@ export default function PlatformsRow() {
       </div>
 
       {/* Grid/Row of platform icons */}
-      <div className="flex items-center justify-start sm:justify-start md:justify-center gap-4 overflow-x-auto pb-4 scroll-hidden select-none">
+      <div className="flex items-center justify-start sm:justify-start md:justify-center gap-4 overflow-x-auto pt-3 pb-5 px-2 scroll-hidden select-none">
         {platforms.map((p) => {
           const isClickable = !!p.targetRowId
           

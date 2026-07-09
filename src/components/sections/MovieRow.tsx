@@ -54,7 +54,7 @@ export default function MovieRow({ title, movies, id }: MovieRowProps) {
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseLeave}
-          className={`flex gap-3 overflow-x-auto scroll-hidden pb-1 select-none ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          className={`flex gap-3 overflow-x-auto scroll-hidden pt-2 pb-4 px-1 select-none ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           onDragStart={(e) => e.preventDefault()}
           style={{ scrollBehavior: dragging ? 'auto' : 'smooth' }}
         >
