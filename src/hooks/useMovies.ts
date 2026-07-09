@@ -151,4 +151,49 @@ export function useCategoryFromDb(
   })
 }
 
+export function usePlatformMoviesFromDb(
+  providerId: number,
+  region: string = 'ID'
+) {
+  return useQuery({
+    queryKey: ['movies', 'platform-db', providerId, region],
+    queryFn: async () => {
+      try {
+        const all = await db.fetchAllMovies()
+        if (!all || all.length === 0) return [] as Movie[]
+
+        try {
+          const tmdbModule = await import('@/lib/tmdb')
+          const [resMovies, resSeries] = await Promise.all([
+            tmdbModule.getDiscoverByProvider(providerId, 'movie', region, 1),
+            tmdbModule.getDiscoverByProvider(providerId, 'series', region, 1)
+          ])
+
+          const combined = [
+            ...(resMovies?.results || []),
+            ...(resSeries?.results || [])
+          ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+
+          if (combined.length > 0) {
+            const orderMap = new Map(combined.map((r: { id: number }, idx: number) => [r.id, idx + 1]))
+            const filtered = all.filter((m) => m.tmdbId && orderMap.has(Number(m.tmdbId)))
+            if (filtered.length > 0) {
+              filtered.sort((a, b) => (orderMap.get(Number(a.tmdbId)) || 999) - (orderMap.get(Number(b.tmdbId)) || 999))
+              return filtered
+            }
+          }
+        } catch (e) {
+          console.warn(`TMDB platform discovery ${providerId} fetch failed, using fallback:`, e)
+        }
+
+        // Fallback: return empty (or you can return first 12 movies, but empty is better so the row doesn't show duplicates of unrelated movies)
+        return [] as Movie[]
+      } catch {
+        return [] as Movie[]
+      }
+    },
+    staleTime: 1000 * 60 * 60,
+  })
+}
+
 

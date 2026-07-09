@@ -42,6 +42,17 @@ export async function getMoviesByCategory(
   return { results: data.results, total: data.total_results, page: data.page }
 }
 
+export async function getDiscoverByProvider(
+  providerId: number,
+  type: 'movie' | 'series' = 'movie',
+  region: string = 'ID',
+  page: number = 1
+): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
+  const path = `${API_BASE}/tmdb/discover?with_watch_providers=${providerId}&watch_region=${region}&type=${type}&page=${page}`
+  const data = await fetchJson<{ results: TmdbMovieResult[]; total_results: number; page: number }>(path)
+  return { results: data.results, total: data.total_results, page: data.page }
+}
+
 export async function getMovieDetail(tmdbId: number, type: 'movie' | 'series' = 'movie'): Promise<TmdbMovieDetail> {
   const pathType = type === 'series' ? 'tv' : 'movie'
   return fetchJson<TmdbMovieDetail>(`${API_BASE}/tmdb/${pathType}/${tmdbId}`)

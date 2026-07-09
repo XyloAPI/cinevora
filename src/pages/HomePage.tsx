@@ -6,12 +6,14 @@ import {
   useComingSoon,
   useTrendingFromDb,
   useCategoryFromDb,
+  usePlatformMoviesFromDb,
 } from '@/hooks/useMovies'
 import HeroCarousel from '@/components/sections/HeroCarousel'
 import MovieRow from '@/components/sections/MovieRow'
 import MovieGrid from '@/components/sections/MovieGrid'
 import CategoriesGrid from '@/components/sections/CategoriesGrid'
 import ComingSoon from '@/components/sections/ComingSoon'
+import PlatformsRow from '@/components/sections/PlatformsRow'
 import SEO from '@/components/shared/SEO'
 import { MovieRowSkeleton, MovieGridSkeleton } from '@/components/shared/Skeleton'
 
@@ -28,10 +30,18 @@ export default function HomePage() {
   const { data: popular = [], isLoading: popularLoad } = useCategoryFromDb('popular')
   const { data: topRated = [], isLoading: topRatedLoad } = useCategoryFromDb('top_rated')
 
+  // Platform trending lists (Netflix, Disney+, Viu)
+  const { data: netflixTrending = [], isLoading: netflixLoad } = usePlatformMoviesFromDb(8)
+  const { data: disneyTrending = [], isLoading: disneyLoad } = usePlatformMoviesFromDb(122)
+  const { data: viuTrending = [], isLoading: viuLoad } = usePlatformMoviesFromDb(158)
+
   return (
     <>
       <SEO />
       <HeroCarousel />
+      
+      {/* Platform quick links */}
+      <PlatformsRow />
       
       {/* 1. Global Weekly Trending */}
       {trendingLoad ? <MovieRowSkeleton /> : <MovieRow title="Trending This Week" movies={trending} />}
@@ -41,6 +51,57 @@ export default function HomePage() {
         <MovieRowSkeleton />
       ) : (
         trendingId.length > 0 && <MovieRow title="Trending di Indonesia" movies={trendingId} />
+      )}
+
+      {/* Netflix Row */}
+      {netflixLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        netflixTrending.length > 0 && (
+          <MovieRow
+            id="netflix-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <span className="text-[#E50914] font-black uppercase tracking-wider">Netflix</span>
+              </span>
+            }
+            movies={netflixTrending}
+          />
+        )
+      )}
+
+      {/* Disney+ Row */}
+      {disneyLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        disneyTrending.length > 0 && (
+          <MovieRow
+            id="disney-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <span className="bg-gradient-to-r from-[#0063e5] to-[#30b9e3] bg-clip-text text-transparent font-extrabold">Disney+</span>
+              </span>
+            }
+            movies={disneyTrending}
+          />
+        )
+      )}
+
+      {/* Viu Row */}
+      {viuLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        viuTrending.length > 0 && (
+          <MovieRow
+            id="viu-row"
+            title={
+              <span className="flex items-center gap-2">
+                Drakor & Show Populer di <span className="text-[#FFC20E] font-extrabold uppercase tracking-wide">Viu</span>
+              </span>
+            }
+            movies={viuTrending}
+          />
+        )
       )}
 
       {/* 3. Sedang Tayang di Bioskop */}

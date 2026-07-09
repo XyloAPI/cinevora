@@ -4,7 +4,7 @@ import MovieCard from '@/components/shared/MovieCard'
 import type { Movie } from '@/types'
 
 interface MovieRowProps {
-  title: string
+  title: React.ReactNode
   movies: Movie[]
   id?: string
 }
