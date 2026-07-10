@@ -145,6 +145,7 @@ export default function MovieForm({
       stream_url: finalStreamUrl || null,
       production_companies: editingMovie.productionCompanies ? JSON.stringify(editingMovie.productionCompanies) : null,
       status: editingMovie.status || null,
+      provider_id: Number(form.get('providerId')) || null,
     }
 
     try {
@@ -272,6 +273,20 @@ export default function MovieForm({
           >
             <option value="movie">Movie</option>
             <option value="series">Series</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-[11px] text-white/40">
+          Platform / Provider
+          <select
+            name="providerId"
+            defaultValue={editingMovie.providerId || ''}
+            className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+          >
+            <option value="">None / Default</option>
+            <option value="8">Netflix</option>
+            <option value="122">Disney+ Hotstar</option>
+            <option value="158">Viu</option>
           </select>
         </label>
 

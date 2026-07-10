@@ -151,11 +151,6 @@ export function useCategoryFromDb(
   })
 }
 
-const PROVIDER_OVERRIDES: Record<number, number[]> = {
-  325416: [158], // Bidadari Tanpa Syurga -> Viu
-  286794: [158], // Saudade -> Viu
-}
-
 export function usePlatformMoviesFromDb(
   providerId: number,
   region: string = 'ID'
@@ -182,18 +177,15 @@ export function usePlatformMoviesFromDb(
           ]
           tmdbMatchedIds = combined.map((r: { id: number }) => Number(r.id))
         } catch (e) {
-          console.warn(`TMDB platform discovery ${providerId} fetch failed, using fallbacks:`, e)
+          console.warn(`TMDB platform discovery ${providerId} fetch failed, using database & URL fallbacks:`, e)
         }
 
         const filtered = all.filter((m) => {
-          if (!m.tmdbId) return false
-          const idNum = Number(m.tmdbId)
+          // 1. Match from DB field first (added in Admin panel)
+          if (m.providerId === providerId) return true
 
-          // 1. Match from TMDB discovery
-          if (tmdbMatchedIds.includes(idNum)) return true
-
-          // 2. Match from manual overrides
-          if (PROVIDER_OVERRIDES[idNum]?.includes(providerId)) return true
+          // 2. Match from TMDB discovery
+          if (m.tmdbId && tmdbMatchedIds.includes(Number(m.tmdbId))) return true
 
           // 3. Fallback: match from homepage URL (e.g. contains viu.com, netflix.com, disneyplus.com)
           if (m.homepage) {

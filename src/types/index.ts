@@ -35,6 +35,7 @@ export interface Movie {
   productionCompanies?: string[]
   status?: string
   trendingRank?: number
+  providerId?: number
 }
 
 export interface NavLink {
