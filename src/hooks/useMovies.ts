@@ -193,6 +193,9 @@ export function usePlatformMoviesFromDb(
             if (providerId === 8 && hp.includes('netflix.com')) return true
             if (providerId === 122 && (hp.includes('disneyplus.com') || hp.includes('hotstar.com'))) return true
             if (providerId === 158 && hp.includes('viu.com')) return true
+            if (providerId === 119 && (hp.includes('primevideo.com') || hp.includes('amazon.com'))) return true
+            if ((providerId === 1899 || providerId === 384) && (hp.includes('hbogo') || hp.includes('hbomax') || hp.includes('hbo.com') || hp.includes('max.com'))) return true
+            if (providerId === 350 && hp.includes('apple.com')) return true
           }
 
           return false

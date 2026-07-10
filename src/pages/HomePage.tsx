@@ -30,10 +30,13 @@ export default function HomePage() {
   const { data: popular = [], isLoading: popularLoad } = useCategoryFromDb('popular')
   const { data: topRated = [], isLoading: topRatedLoad } = useCategoryFromDb('top_rated')
 
-  // Platform trending lists (Netflix, Disney+, Viu)
+  // Platform trending lists (Netflix, Disney+, Viu, Prime Video, HBO Max, Apple TV+)
   const { data: netflixTrending = [], isLoading: netflixLoad } = usePlatformMoviesFromDb(8)
   const { data: disneyTrending = [], isLoading: disneyLoad } = usePlatformMoviesFromDb(122)
   const { data: viuTrending = [], isLoading: viuLoad } = usePlatformMoviesFromDb(158)
+  const { data: primeTrending = [], isLoading: primeLoad } = usePlatformMoviesFromDb(119)
+  const { data: hboTrending = [], isLoading: hboLoad } = usePlatformMoviesFromDb(1899)
+  const { data: appleTrending = [], isLoading: appleLoad } = usePlatformMoviesFromDb(350)
 
   return (
     <>
@@ -100,6 +103,57 @@ export default function HomePage() {
               </span>
             }
             movies={viuTrending}
+          />
+        )
+      )}
+
+      {/* Prime Video Row */}
+      {primeLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        primeTrending.length > 0 && (
+          <MovieRow
+            id="prime-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <span className="text-[#00A8E1] font-black uppercase tracking-wider">Prime Video</span>
+              </span>
+            }
+            movies={primeTrending}
+          />
+        )
+      )}
+
+      {/* HBO Max Row */}
+      {hboLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        hboTrending.length > 0 && (
+          <MovieRow
+            id="hbo-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <span className="bg-gradient-to-r from-[#9933FF] to-[#D500F9] bg-clip-text text-transparent font-extrabold uppercase tracking-wide">HBO Max</span>
+              </span>
+            }
+            movies={hboTrending}
+          />
+        )
+      )}
+
+      {/* Apple TV+ Row */}
+      {appleLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        appleTrending.length > 0 && (
+          <MovieRow
+            id="apple-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <span className="text-white font-extrabold tracking-tight">Apple TV+</span>
+              </span>
+            }
+            movies={appleTrending}
           />
         )
       )}

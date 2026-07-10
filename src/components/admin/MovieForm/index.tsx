@@ -287,6 +287,9 @@ export default function MovieForm({
             <option value="8">Netflix</option>
             <option value="122">Disney+ Hotstar</option>
             <option value="158">Viu</option>
+            <option value="119">Prime Video</option>
+            <option value="1899">HBO Max / HBO Go</option>
+            <option value="350">Apple TV+</option>
           </select>
         </label>
 

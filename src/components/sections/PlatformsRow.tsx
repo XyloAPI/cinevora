@@ -33,18 +33,21 @@ const platforms: PlatformItem[] = [
   {
     id: 'prime',
     name: 'Prime Video',
+    targetRowId: 'prime-row',
     logoPlaceholderText: 'PV',
     glowColor: 'from-[#00A8E1]/20 via-[#00A8E1]/5 to-transparent',
   },
   {
     id: 'hbo',
     name: 'HBO Max',
+    targetRowId: 'hbo-row',
     logoPlaceholderText: 'HBO',
     glowColor: 'from-[#9933FF]/20 via-[#9933FF]/5 to-transparent',
   },
   {
     id: 'apple',
     name: 'Apple TV+',
+    targetRowId: 'apple-row',
     logoPlaceholderText: 'Apple',
     glowColor: 'from-white/15 via-white/5 to-transparent',
   },
