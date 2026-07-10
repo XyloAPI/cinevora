@@ -151,6 +151,11 @@ export function useCategoryFromDb(
   })
 }
 
+const PROVIDER_OVERRIDES: Record<number, number[]> = {
+  325416: [158], // Bidadari Tanpa Syurga -> Viu
+  286794: [158], // Saudade -> Viu
+}
+
 export function usePlatformMoviesFromDb(
   providerId: number,
   region: string = 'ID'
@@ -162,6 +167,8 @@ export function usePlatformMoviesFromDb(
         const all = await db.fetchAllMovies()
         if (!all || all.length === 0) return [] as Movie[]
 
+        let tmdbMatchedIds: number[] = []
+
         try {
           const tmdbModule = await import('@/lib/tmdb')
           const [resMovies, resSeries] = await Promise.all([
@@ -172,22 +179,35 @@ export function usePlatformMoviesFromDb(
           const combined = [
             ...(resMovies?.results || []),
             ...(resSeries?.results || [])
-          ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-
-          if (combined.length > 0) {
-            const orderMap = new Map(combined.map((r: { id: number }, idx: number) => [r.id, idx + 1]))
-            const filtered = all.filter((m) => m.tmdbId && orderMap.has(Number(m.tmdbId)))
-            if (filtered.length > 0) {
-              filtered.sort((a, b) => (orderMap.get(Number(a.tmdbId)) || 999) - (orderMap.get(Number(b.tmdbId)) || 999))
-              return filtered
-            }
-          }
+          ]
+          tmdbMatchedIds = combined.map((r: { id: number }) => Number(r.id))
         } catch (e) {
-          console.warn(`TMDB platform discovery ${providerId} fetch failed, using fallback:`, e)
+          console.warn(`TMDB platform discovery ${providerId} fetch failed, using fallbacks:`, e)
         }
 
-        // Fallback: return empty (or you can return first 12 movies, but empty is better so the row doesn't show duplicates of unrelated movies)
-        return [] as Movie[]
+        const filtered = all.filter((m) => {
+          if (!m.tmdbId) return false
+          const idNum = Number(m.tmdbId)
+
+          // 1. Match from TMDB discovery
+          if (tmdbMatchedIds.includes(idNum)) return true
+
+          // 2. Match from manual overrides
+          if (PROVIDER_OVERRIDES[idNum]?.includes(providerId)) return true
+
+          // 3. Fallback: match from homepage URL (e.g. contains viu.com, netflix.com, disneyplus.com)
+          if (m.homepage) {
+            const hp = m.homepage.toLowerCase()
+            if (providerId === 8 && hp.includes('netflix.com')) return true
+            if (providerId === 122 && (hp.includes('disneyplus.com') || hp.includes('hotstar.com'))) return true
+            if (providerId === 158 && hp.includes('viu.com')) return true
+          }
+
+          return false
+        })
+
+        // Sort by popularity (descending)
+        return filtered.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
       } catch {
         return [] as Movie[]
       }

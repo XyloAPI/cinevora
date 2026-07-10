@@ -134,6 +134,22 @@ app.get('/api/tmdb/genre/movie/list', async (req: any, res: any) => {
   }
 })
 
+app.get('/api/tmdb/discover', async (req: any, res: any) => {
+  try {
+    const { with_watch_providers, watch_region = 'ID', type = 'movie', page = 1 } = req.query
+    const endpoint = type === 'series' || type === 'tv' ? 'tv' : 'movie'
+    const url = `${TMDB_BASE}/discover/${endpoint}?with_watch_providers=${with_watch_providers}&watch_region=${watch_region}&sort_by=popularity.desc&page=${page}&language=${watch_region === 'ID' ? 'id-ID' : 'en-US'}`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
 // Turso proxy (passthrough untuk queries yang aman)
 app.post('/api/db/query', async (req: any, res: any) => {
   try {
