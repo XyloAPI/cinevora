@@ -10,6 +10,7 @@ import EpisodeSelector from './EpisodeSelector'
 interface Episode {
   episode: number
   url: string
+  url2?: string
 }
 
 interface Season {
@@ -23,6 +24,7 @@ export default function WatchPage() {
 
   const [activeSeason, setActiveSeason] = useState<number>(1)
   const [activeEpisode, setActiveEpisode] = useState<number>(1)
+  const [activeServer, setActiveServer] = useState<'server1' | 'server2'>('server1')
 
   // Parse seasons and episodes if it's a TV series
   const isSeries = movie?.type === 'series'
@@ -67,12 +69,24 @@ export default function WatchPage() {
     )
   }
 
-  // Resolve current active stream URL
-  let currentStreamUrl = movie.streamUrl || ''
+  // Resolve available stream URLs
+  let server1Url = movie.streamUrl || ''
+  let server2Url = movie.streamUrl2 || ''
+
   if (isSeries && seasonsList.length > 0) {
     const seasonObj = seasonsList.find((s) => s.season === activeSeason)
     const episodeObj = seasonObj?.episodes.find((e) => e.episode === activeEpisode)
-    currentStreamUrl = episodeObj?.url || ''
+    server1Url = episodeObj?.url || ''
+    server2Url = episodeObj?.url2 || ''
+  }
+
+  const hasServer2 = Boolean(server2Url && server2Url.trim())
+
+  let currentStreamUrl = server1Url
+  if (activeServer === 'server2' && hasServer2) {
+    currentStreamUrl = server2Url
+  } else if (!server1Url && hasServer2) {
+    currentStreamUrl = server2Url
   }
 
   return (
@@ -87,6 +101,7 @@ export default function WatchPage() {
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
             {currentStreamUrl ? (
               <iframe
+                key={currentStreamUrl}
                 src={currentStreamUrl}
                 className="absolute inset-0 w-full h-full rounded-lg bg-black"
                 allowFullScreen
@@ -109,6 +124,37 @@ export default function WatchPage() {
               </div>
             )}
           </div>
+
+          {/* Server Switcher (Only visible if Server 2 is available) */}
+          {hasServer2 && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">Server:</span>
+              <div className="inline-flex rounded-lg bg-cinema-900/80 p-1 border border-white/[0.06] gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveServer('server1')}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    activeServer === 'server1' || !server2Url
+                      ? 'bg-cinema-red text-white shadow-sm'
+                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Server 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveServer('server2')}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    activeServer === 'server2' && server2Url
+                      ? 'bg-cinema-red text-white shadow-sm'
+                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Server 2
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Episode & Season Selector for TV Series - Subcomponent */}
           {isSeries && seasonsList.length > 0 && (

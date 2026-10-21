@@ -4,6 +4,7 @@ import { IconX, IconGripVertical } from '@tabler/icons-react'
 interface Episode {
   episode: number
   url: string
+  url2?: string
 }
 
 interface Season {
@@ -17,6 +18,7 @@ interface SeasonsManagerProps {
   activeSeasonIndex: number
   setActiveSeasonIndex: (idx: number) => void
   normalizeStreamUrl: (input: string) => string
+  normalizeAbyssUrl: (input: string) => string
 }
 
 export default function SeasonsManager({
@@ -25,6 +27,7 @@ export default function SeasonsManager({
   activeSeasonIndex,
   setActiveSeasonIndex,
   normalizeStreamUrl,
+  normalizeAbyssUrl,
 }: SeasonsManagerProps) {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
@@ -146,7 +149,7 @@ export default function SeasonsManager({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[350px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-1">
             {seasonsList[activeSeasonIndex].episodes.map((ep, epIdx) => (
               <div
                 key={epIdx}
@@ -155,7 +158,7 @@ export default function SeasonsManager({
                 onDragOver={(e) => handleDragOver(e, epIdx)}
                 onDrop={() => handleDrop(epIdx)}
                 onDragEnd={handleDragEnd}
-                className={`flex items-center gap-1.5 bg-cinema-800/40 p-1.5 rounded border transition-all ${
+                className={`flex items-start gap-1.5 bg-cinema-800/40 p-2 rounded border transition-all ${
                   draggedIdx === epIdx ? 'opacity-40 bg-cinema-800/20' : ''
                 } ${
                   dragOverIdx === epIdx ? 'border-cinema-red border-dashed scale-[1.01]' : 'border-white/[0.04]'
@@ -168,14 +171,14 @@ export default function SeasonsManager({
                     setDraggedIdx(epIdx)
                   }}
                   onMouseUp={() => setIsReadyToDrag(false)}
-                  className="cursor-grab active:cursor-grabbing text-white/20 hover:text-white/60 p-0.5 shrink-0"
+                  className="cursor-grab active:cursor-grabbing text-white/20 hover:text-white/60 p-0.5 shrink-0 mt-1"
                   title="Drag to reorder"
                 >
                   <IconGripVertical size={14} />
                 </div>
 
                 {/* Episode label / editor */}
-                <div className="flex items-center bg-white/5 rounded border border-white/[0.02] px-1.5 py-0.5 shrink-0 gap-0.5">
+                <div className="flex items-center bg-white/5 rounded border border-white/[0.02] px-1.5 py-0.5 shrink-0 gap-0.5 mt-0.5">
                   <span className="text-[9px] font-bold text-white/30 uppercase">Ep</span>
                   <input
                     type="number"
@@ -186,31 +189,56 @@ export default function SeasonsManager({
                       updated[activeSeasonIndex].episodes[epIdx].episode = val
                       setSeasonsList(updated)
                     }}
-                    className="w-8 bg-transparent text-white text-[11px] font-bold text-center outline-none focus:text-cinema-red"
+                    className="w-7 bg-transparent text-white text-[11px] font-bold text-center outline-none focus:text-cinema-red"
                   />
                 </div>
 
-                {/* URL Input */}
-                <input
-                  type="text"
-                  value={ep.url}
-                  placeholder="Stream URL / code..."
-                  onChange={(e) => {
-                    const val = e.target.value
-                    const updated = [...seasonsList]
-                    updated[activeSeasonIndex].episodes[epIdx].url = val
-                    setSeasonsList(updated)
-                  }}
-                  onBlur={() => {
-                    if (ep.url.trim()) {
-                      const normalized = normalizeStreamUrl(ep.url)
+                {/* Inputs container */}
+                <div className="flex-1 flex flex-col gap-1 min-w-0">
+                  {/* Server 1 Input */}
+                  <input
+                    type="text"
+                    value={ep.url}
+                    placeholder="Server 1 slug/URL..."
+                    onChange={(e) => {
+                      const val = e.target.value
                       const updated = [...seasonsList]
-                      updated[activeSeasonIndex].episodes[epIdx].url = normalized
+                      updated[activeSeasonIndex].episodes[epIdx].url = val
                       setSeasonsList(updated)
-                    }
-                  }}
-                  className="flex-1 bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
-                />
+                    }}
+                    onBlur={() => {
+                      if (ep.url.trim()) {
+                        const normalized = normalizeStreamUrl(ep.url)
+                        const updated = [...seasonsList]
+                        updated[activeSeasonIndex].episodes[epIdx].url = normalized
+                        setSeasonsList(updated)
+                      }
+                    }}
+                    className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
+                  />
+
+                  {/* Server 2 Input */}
+                  <input
+                    type="text"
+                    value={ep.url2 || ''}
+                    placeholder="Server 2 slug/URL (Abyss)..."
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const updated = [...seasonsList]
+                      updated[activeSeasonIndex].episodes[epIdx].url2 = val
+                      setSeasonsList(updated)
+                    }}
+                    onBlur={() => {
+                      if (ep.url2 && ep.url2.trim()) {
+                        const normalized = normalizeAbyssUrl(ep.url2)
+                        const updated = [...seasonsList]
+                        updated[activeSeasonIndex].episodes[epIdx].url2 = normalized
+                        setSeasonsList(updated)
+                      }
+                    }}
+                    className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
+                  />
+                </div>
 
                 {/* Delete button */}
                 <button
@@ -220,7 +248,7 @@ export default function SeasonsManager({
                     updated[activeSeasonIndex].episodes.splice(epIdx, 1)
                     setSeasonsList(updated)
                   }}
-                  className="text-white/20 hover:text-cinema-red p-1 transition-colors shrink-0"
+                  className="text-white/20 hover:text-cinema-red p-1 transition-colors shrink-0 mt-1"
                   title="Delete Episode"
                 >
                   <IconX size={12} />

@@ -62,7 +62,7 @@ export default function DashboardTab({ stats, localMovies }: DashboardTabProps) 
 
   // 4. Missing elements list for auditing
   const missingStreams = useMemo(() => {
-    return localMovies.filter((m) => !m.streamUrl).slice(0, 5)
+    return localMovies.filter((m) => !m.streamUrl && !m.streamUrl2).slice(0, 5)
   }, [localMovies])
 
   const missingTrailers = useMemo(() => {
@@ -165,7 +165,7 @@ export default function DashboardTab({ stats, localMovies }: DashboardTabProps) 
                 ) : (
                   <IconBrandYoutube size={14} className="text-white/10" title="No Trailer" />
                 )}
-                {m.streamUrl ? (
+                {m.streamUrl || m.streamUrl2 ? (
                   <IconWorld size={14} className="text-green-400" title="Has Stream" />
                 ) : (
                   <IconWorld size={14} className="text-white/10" title="No Stream" />

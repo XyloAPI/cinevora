@@ -32,6 +32,7 @@ export interface Movie {
   logoUrl?: string
   trailerUrl?: string
   streamUrl?: string
+  streamUrl2?: string
   productionCompanies?: string[]
   status?: string
   trendingRank?: number

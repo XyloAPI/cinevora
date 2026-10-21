@@ -143,7 +143,7 @@ export default function MovieHeroInfo({
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-cinema-red text-white font-semibold rounded-lg hover:bg-cinema-red-dark transition-colors text-sm shadow-lg shadow-cinema-red/25"
               >
                 <IconPlayerPlayFilled size={16} />
-                {movie.streamUrl ? 'Watch Now' : 'Play Now'}
+                {movie.streamUrl || movie.streamUrl2 ? 'Watch Now' : 'Play Now'}
               </button>
               {trailer && (
                 <button

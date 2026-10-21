@@ -52,6 +52,7 @@ export interface DbMovie {
   logo_url: string | null
   trailer_url: string | null
   stream_url: string | null
+  stream_url_2: string | null
   production_companies: string | null
   status: string | null
   provider_id: number | null
@@ -143,6 +144,7 @@ function parseDbMovie(row: DbMovie) {
     logoUrl: row.logo_url || undefined,
     trailerUrl: row.trailer_url || undefined,
     streamUrl: row.stream_url || undefined,
+    streamUrl2: row.stream_url_2 || undefined,
     productionCompanies: row.production_companies ? JSON.parse(row.production_companies) : undefined,
     status: row.status || undefined,
     providerId: row.provider_id ? Number(row.provider_id) : undefined,
@@ -155,8 +157,8 @@ export async function addMovie(movie: Omit<DbMovie, 'id'> & { id: string }) {
     is_trending, is_featured, coming_soon, release_date, quality, duration, type,
     episodes, seasons, tmdb_id, imdb_id, tagline, runtime, budget, revenue,
     original_language, popularity, vote_count, homepage, director, cast,
-    logo_url, trailer_url, stream_url, production_companies, status, provider_id
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    logo_url, trailer_url, stream_url, stream_url_2, production_companies, status, provider_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   await dbQuery(sql, [
     movie.id,
     movie.slug,
@@ -191,6 +193,7 @@ export async function addMovie(movie: Omit<DbMovie, 'id'> & { id: string }) {
     movie.logo_url,
     movie.trailer_url,
     movie.stream_url,
+    movie.stream_url_2,
     movie.production_companies,
     movie.status,
     movie.provider_id,
@@ -201,7 +204,7 @@ export async function updateMovie(id: string, movie: Partial<DbMovie>) {
   const fields: string[] = []
   const values: any[] = []
   
-  const allowedFields = ['slug', 'title', 'year', 'rating', 'genre', 'poster', 'backdrop', 'synopsis', 'is_trending', 'is_featured', 'coming_soon', 'release_date', 'quality', 'duration', 'type', 'episodes', 'seasons', 'tmdb_id', 'imdb_id', 'tagline', 'runtime', 'budget', 'revenue', 'original_language', 'popularity', 'vote_count', 'homepage', 'director', 'cast', 'logo_url', 'trailer_url', 'stream_url', 'production_companies', 'status', 'provider_id']
+  const allowedFields = ['slug', 'title', 'year', 'rating', 'genre', 'poster', 'backdrop', 'synopsis', 'is_trending', 'is_featured', 'coming_soon', 'release_date', 'quality', 'duration', 'type', 'episodes', 'seasons', 'tmdb_id', 'imdb_id', 'tagline', 'runtime', 'budget', 'revenue', 'original_language', 'popularity', 'vote_count', 'homepage', 'director', 'cast', 'logo_url', 'trailer_url', 'stream_url', 'stream_url_2', 'production_companies', 'status', 'provider_id']
   
   for (const key of allowedFields) {
     if (key in movie && movie[key as keyof typeof movie] !== undefined) {
@@ -265,10 +268,17 @@ export async function runMigration() {
     logo_url TEXT,
     trailer_url TEXT,
     stream_url TEXT,
+    stream_url_2 TEXT,
     production_companies TEXT,
     status TEXT,
     provider_id INTEGER
   )`)
+
+  try {
+    await dbQuery('ALTER TABLE movies ADD COLUMN stream_url_2 TEXT')
+  } catch {
+    // Column may already exist
+  }
 }
 
 export async function backfillSlugs() {

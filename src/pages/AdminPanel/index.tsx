@@ -251,7 +251,7 @@ export default function AdminPanel() {
       comingSoon: localMovies.filter((m) => m.comingSoon).length,
       genres: genresData?.length ?? 0,
       withTrailer: localMovies.filter((m) => m.trailerUrl).length,
-      withStream: localMovies.filter((m) => m.streamUrl).length,
+      withStream: localMovies.filter((m) => m.streamUrl || m.streamUrl2).length,
     }
   }, [localMovies, genresData])
 

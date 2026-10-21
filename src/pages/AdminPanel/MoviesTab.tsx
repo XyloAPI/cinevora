@@ -215,8 +215,8 @@ export default function MoviesTab({
                       )}
                     </td>
                     <td className="p-2 hidden lg:table-cell">
-                      {m.streamUrl ? (
-                        <a href={m.streamUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-400/80">
+                      {m.streamUrl || m.streamUrl2 ? (
+                        <a href={m.streamUrl || m.streamUrl2} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-400/80">
                           <IconWorld size={14} />
                         </a>
                       ) : (

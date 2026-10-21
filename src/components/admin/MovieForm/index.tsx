@@ -27,6 +27,19 @@ function normalizeStreamUrl(input: string): string {
   return trimmed
 }
 
+function normalizeAbyssUrl(input: string): string {
+  const trimmed = input.trim()
+  if (!trimmed) return ''
+  if (!trimmed.includes('.')) {
+    return `https://player.abyssplayer.com/${trimmed}`
+  }
+  if (trimmed.includes('abyss.to') || trimmed.includes('abyssplayer.com')) {
+    const code = trimmed.split('/').filter(Boolean).pop() || ''
+    return `https://player.abyssplayer.com/${code}`
+  }
+  return trimmed
+}
+
 export default function MovieForm({
   editingMovie,
   localMovies,
@@ -36,8 +49,9 @@ export default function MovieForm({
   const [synopsisText, setSynopsisText] = useState('')
   const [taglineText, setTaglineText] = useState('')
   const [streamUrlText, setStreamUrlText] = useState('')
+  const [streamUrl2Text, setStreamUrl2Text] = useState('')
   const [mediaType, setMediaType] = useState<'movie' | 'series'>('movie')
-  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string }> }>>([])
+  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string; url2?: string }> }>>([])
   const [activeSeasonIndex, setActiveSeasonIndex] = useState<number>(0)
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false)
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
@@ -52,6 +66,7 @@ export default function MovieForm({
     setSynopsisText(editingMovie.synopsis || '')
     setTaglineText(editingMovie.tagline || '')
     setStreamUrlText(editingMovie.streamUrl || '')
+    setStreamUrl2Text(editingMovie.streamUrl2 || '')
     setSynopsisTranslated(false)
     setTaglineTranslated(false)
     originalSynopsisRef.current = editingMovie.synopsis || ''
@@ -76,7 +91,9 @@ export default function MovieForm({
         setSeasonsList([
           {
             season: 1,
-            episodes: editingMovie.streamUrl ? [{ episode: 1, url: editingMovie.streamUrl }] : [{ episode: 1, url: '' }]
+            episodes: editingMovie.streamUrl
+              ? [{ episode: 1, url: editingMovie.streamUrl, url2: editingMovie.streamUrl2 || '' }]
+              : [{ episode: 1, url: '', url2: '' }]
           }
         ])
       }
@@ -97,17 +114,21 @@ export default function MovieForm({
 
     const title = (form.get('title') as string) || ''
     const rawStreamUrl = streamUrlText || ''
+    const rawStreamUrl2 = streamUrl2Text || ''
     
     let finalStreamUrl = ''
+    let finalStreamUrl2 = ''
     let totalSeasons: number | null = null
     let totalEpisodes: number | null = null
     
     if (mediaType === 'series') {
       finalStreamUrl = JSON.stringify(seasonsList)
+      finalStreamUrl2 = ''
       totalSeasons = seasonsList.length
       totalEpisodes = seasonsList.reduce((acc, s) => acc + s.episodes.length, 0)
     } else {
       finalStreamUrl = rawStreamUrl ? normalizeStreamUrl(rawStreamUrl) : ''
+      finalStreamUrl2 = rawStreamUrl2 ? normalizeAbyssUrl(rawStreamUrl2) : ''
     }
 
     const data = {
@@ -143,6 +164,7 @@ export default function MovieForm({
       logo_url: (form.get('logoUrl') as string) || null,
       trailer_url: (form.get('trailerUrl') as string) || null,
       stream_url: finalStreamUrl || null,
+      stream_url_2: finalStreamUrl2 || null,
       production_companies: editingMovie.productionCompanies ? JSON.stringify(editingMovie.productionCompanies) : null,
       status: editingMovie.status || null,
       provider_id: Number(form.get('providerId')) || null,
@@ -294,30 +316,57 @@ export default function MovieForm({
         </label>
 
         {mediaType === 'movie' ? (
-          <label className="flex flex-col gap-1 text-[11px] text-white/40">
-            Stream URL
-            <input
-              name="streamUrl"
-              value={streamUrlText}
-              onChange={(e) => {
-                const val = e.target.value
-                setStreamUrlText(val)
-                
-                const trimmed = val.trim()
-                if (trimmed.includes('streamxylospace') && (trimmed.includes('/d/') || trimmed.includes('/download/'))) {
-                  setStreamUrlText(normalizeStreamUrl(trimmed))
-                } else if (/^[a-zA-Z0-9]{12}$/.test(trimmed)) {
-                  setStreamUrlText(normalizeStreamUrl(trimmed))
-                }
-              }}
-              onBlur={() => {
-                if (streamUrlText.trim()) {
-                  setStreamUrlText(normalizeStreamUrl(streamUrlText))
-                }
-              }}
-              className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
-            />
-          </label>
+          <>
+            <label className="flex flex-col gap-1 text-[11px] text-white/40">
+              Stream URL (Server 1)
+              <input
+                name="streamUrl"
+                value={streamUrlText}
+                placeholder="StreamXylo slug/URL..."
+                onChange={(e) => {
+                  const val = e.target.value
+                  setStreamUrlText(val)
+                  
+                  const trimmed = val.trim()
+                  if (trimmed.includes('streamxylospace') && (trimmed.includes('/d/') || trimmed.includes('/download/'))) {
+                    setStreamUrlText(normalizeStreamUrl(trimmed))
+                  } else if (/^[a-zA-Z0-9]{12}$/.test(trimmed)) {
+                    setStreamUrlText(normalizeStreamUrl(trimmed))
+                  }
+                }}
+                onBlur={() => {
+                  if (streamUrlText.trim()) {
+                    setStreamUrlText(normalizeStreamUrl(streamUrlText))
+                  }
+                }}
+                className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-[11px] text-white/40">
+              Stream URL (Server 2)
+              <input
+                name="streamUrl2"
+                value={streamUrl2Text}
+                placeholder="Abyss slug/URL..."
+                onChange={(e) => {
+                  const val = e.target.value
+                  setStreamUrl2Text(val)
+                  
+                  const trimmed = val.trim()
+                  if (trimmed.includes('abyss.to') || trimmed.includes('abyssplayer.com')) {
+                    setStreamUrl2Text(normalizeAbyssUrl(trimmed))
+                  }
+                }}
+                onBlur={() => {
+                  if (streamUrl2Text.trim()) {
+                    setStreamUrl2Text(normalizeAbyssUrl(streamUrl2Text))
+                  }
+                }}
+                className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+              />
+            </label>
+          </>
         ) : (
           <SeasonsManager
             seasonsList={seasonsList}
@@ -325,6 +374,7 @@ export default function MovieForm({
             activeSeasonIndex={activeSeasonIndex}
             setActiveSeasonIndex={setActiveSeasonIndex}
             normalizeStreamUrl={normalizeStreamUrl}
+            normalizeAbyssUrl={normalizeAbyssUrl}
           />
         )}
       </div>

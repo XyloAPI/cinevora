@@ -32,6 +32,7 @@ export const movieSchema = z.object({
   cast: z.array(z.string()).optional(),
   trailerUrl: z.string().optional(),
   streamUrl: z.string().optional(),
+  streamUrl2: z.string().optional(),
   productionCompanies: z.array(z.string()).optional(),
   status: z.string().optional(),
 })
