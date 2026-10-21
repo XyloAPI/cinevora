@@ -67,3 +67,10 @@
   .badge-quality.bluray { background: #1A6D9B; color: #fff; }
   .badge-quality.hd { background: #6B3FA0; color: #fff; }
 }
+
+:root {
+  --vds-color-media-primary: #e50914;
+  --vds-color-media-primary-hover: #ff1a2a;
+  --vds-color-media-background: #0f0f0f;
+  --vds-color-media-foreground: #ffffff;
+}
