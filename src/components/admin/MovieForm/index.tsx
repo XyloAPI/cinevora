@@ -313,7 +313,7 @@ export default function MovieForm({
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Director<input name="director" defaultValue={editingMovie.director || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Cast<input name="cast" defaultValue={editingMovie.cast?.join(', ') || ''} placeholder="comma separated" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Logo URL<input name="logoUrl" defaultValue={editingMovie.logoUrl || ''} placeholder="TMDB logo URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Trailer URL<input name="trailerUrl" defaultValue={editingMovie.trailerUrl || ''} placeholder="YouTube URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
+            <label className="flex flex-col gap-1 text-[11px] text-white/40">Trailer URL<input name="trailerUrl" defaultValue={editingMovie.trailerUrl || ''} placeholder="YouTube URL atau file CDN (.mp4 / .webm)" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">
           Type
           <select

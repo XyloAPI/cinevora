@@ -3,27 +3,33 @@ import { useEffect, useState } from 'react'
 import { useMovieBySlug } from '@/hooks/useMovies'
 import { IconArrowLeft, IconBrandYoutube } from '@tabler/icons-react'
 import SEO from '@/components/shared/SEO'
-import { getYoutubeEmbedUrl } from '@/lib/utils'
+import { VideoPlayer } from '@/components/player'
+import { getTrailerSource, type TrailerSource } from '@/lib/trailer'
 import * as tmdb from '@/lib/tmdb'
 
 export default function TrailerPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const { data: movie, isLoading } = useMovieBySlug(slug)
   const navigate = useNavigate()
-  const [embedUrl, setEmbedUrl] = useState<string | null>(null)
+  const [source, setSource] = useState<TrailerSource | null>(null)
 
   useEffect(() => {
     if (!movie) return
-    if (movie.trailerUrl && getYoutubeEmbedUrl(movie.trailerUrl)) {
-      setEmbedUrl(getYoutubeEmbedUrl(movie.trailerUrl)!)
+
+    const own = getTrailerSource(movie.trailerUrl)
+    if (own) {
+      setSource(own)
       return
     }
-    if (movie.tmdbId) {
-      tmdb.getMovieVideos(movie.tmdbId).then((v) => {
-        const url = tmdb.trailerUrl(v)
-        if (url && getYoutubeEmbedUrl(url)) setEmbedUrl(getYoutubeEmbedUrl(url)!)
-      }).catch(() => {})
-    }
+
+    if (!movie.tmdbId) return
+    tmdb
+      .getMovieVideos(movie.tmdbId)
+      .then((videos) => {
+        const url = tmdb.trailerUrl(videos)
+        if (url) setSource(getTrailerSource(url))
+      })
+      .catch(() => {})
   }, [movie])
 
   if (isLoading) {
@@ -64,24 +70,42 @@ export default function TrailerPage() {
 
       <div className="flex-1 flex items-start justify-center bg-black/50 p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-5xl">
-          <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
-            {embedUrl ? (
+          {source?.type === 'youtube' && (
+            <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: '56.25%' }}>
               <iframe
-                src={embedUrl}
+                src={source.embedUrl}
                 className="absolute inset-0 w-full h-full"
                 allowFullScreen
                 allow="autoplay; fullscreen"
               />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-cinema-900 rounded-lg">
-                <IconBrandYoutube size={48} className="text-white/20" />
-                <p className="text-white/40 text-sm">No trailer available for this title</p>
-                <Link to={`/movie/${slug}`} className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors">
-                  Back to Details
-                </Link>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {source?.type === 'file' && (
+            <VideoPlayer
+              key={source.url}
+              src={source.url}
+              title={movie.title}
+              movieId={movie.id}
+              season={0}
+              episode={0}
+              storageKey={`trailer:${slug}`}
+              subtitle={null}
+            />
+          )}
+
+          {!source && (
+            <div className="relative w-full aspect-video flex flex-col items-center justify-center gap-4 bg-cinema-900 rounded-lg">
+              <IconBrandYoutube size={48} className="text-white/20" />
+              <p className="text-white/40 text-sm">No trailer available for this title</p>
+              <p className="text-white/25 text-xs max-w-md text-center">
+                Format trailer yang didukung: YouTube, atau URL file langsung dari CDN (.mp4 / .webm).
+              </p>
+              <Link to={`/movie/${slug}`} className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors">
+                Back to Details
+              </Link>
+            </div>
+          )}
 
           <div className="mt-4 flex items-center gap-3 text-sm text-white/50 flex-wrap">
             <span className="font-semibold text-white">{movie.title}</span>

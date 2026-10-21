@@ -243,18 +243,19 @@ export interface DbEpisodeSubtitle {
   lang: string
   label: string
   kind: string
+  updated_at?: string | null
 }
 
 export async function fetchSubtitles(movieId: string): Promise<DbEpisodeSubtitle[]> {
   return dbQuery<DbEpisodeSubtitle>(
-    'SELECT movie_id, season_no, episode_no, url, lang, label, kind FROM episode_subtitles WHERE movie_id = ?',
+    'SELECT movie_id, season_no, episode_no, url, lang, label, kind, updated_at FROM episode_subtitles WHERE movie_id = ?',
     [movieId]
   )
 }
 
 export async function saveSubtitles(movieId: string, rows: SubtitleRowInput[]): Promise<void> {
   await dbQuery(buildDeleteSubtitlesSql(), [movieId])
-  const built = buildInsertSubtitlesSql(movieId, rows)
+  const built = buildInsertSubtitlesSql(movieId, rows, new Date().toISOString())
   if (built) {
     await dbQuery(built.sql, built.params)
   }
@@ -309,11 +310,18 @@ export async function runMigration() {
     lang TEXT NOT NULL DEFAULT 'id',
     label TEXT NOT NULL DEFAULT 'Indonesia',
     kind TEXT NOT NULL DEFAULT 'subtitles',
+    updated_at TEXT,
     PRIMARY KEY (movie_id, season_no, episode_no)
   )`)
 
   try {
     await dbQuery('ALTER TABLE movies ADD COLUMN stream_url_2 TEXT')
+  } catch {
+    // Column may already exist
+  }
+
+  try {
+    await dbQuery('ALTER TABLE episode_subtitles ADD COLUMN updated_at TEXT')
   } catch {
     // Column may already exist
   }

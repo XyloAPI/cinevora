@@ -21,6 +21,7 @@ export interface VideoPlayerSubtitle {
   lang: string
   label: string
   kind: string
+  version?: string
 }
 
 export interface VideoPlayerProps {
@@ -135,7 +136,12 @@ export default function VideoPlayer({
   }, [subtitle, src])
 
   const trackSrc = subtitle
-    ? buildSubtitleProxyUrl({ movieId, season, episode })
+    ? buildSubtitleProxyUrl({
+        movieId,
+        season,
+        episode,
+        version: subtitle.version || subtitle.url,
+      })
     : null
 
   return (

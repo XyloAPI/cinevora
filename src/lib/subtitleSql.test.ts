@@ -27,13 +27,13 @@ describe('buildDeleteSubtitlesSql', () => {
 
 describe('buildInsertSubtitlesSql', () => {
   it('returns null when there are no rows', () => {
-    expect(buildInsertSubtitlesSql('m1', [])).toBeNull()
+    expect(buildInsertSubtitlesSql('m1', [], '2026-01-01T00:00:00Z')).toBeNull()
   })
 
-  it('binds seven parameters for a single row', () => {
-    const built = buildInsertSubtitlesSql('m1', [ROW_A])
+  it('binds eight parameters for a single row', () => {
+    const built = buildInsertSubtitlesSql('m1', [ROW_A], '2026-01-01T00:00:00Z')
     expect(built).not.toBeNull()
-    expect(built!.params).toHaveLength(7)
+    expect(built!.params).toHaveLength(8)
     expect(built!.params[0]).toBe('m1')
     expect(built!.params[1]).toBe(ROW_A.seasonNo)
     expect(built!.params[2]).toBe(ROW_A.episodeNo)
@@ -41,32 +41,40 @@ describe('buildInsertSubtitlesSql', () => {
     expect(built!.params[4]).toBe(ROW_A.lang)
     expect(built!.params[5]).toBe(ROW_A.label)
     expect(built!.params[6]).toBe(ROW_A.kind)
+    expect(built!.params[7]).toBe('2026-01-01T00:00:00Z')
   })
 
-  it('binds fourteen parameters for two rows', () => {
-    const built = buildInsertSubtitlesSql('m1', [ROW_A, ROW_B])
-    expect(built!.params).toHaveLength(14)
-    expect(built!.params[7]).toBe('m1')
-    expect(built!.params[10]).toBe(ROW_B.url)
+  it('binds sixteen parameters for two rows', () => {
+    const built = buildInsertSubtitlesSql('m1', [ROW_A, ROW_B], '2026-01-01T00:00:00Z')
+    expect(built!.params).toHaveLength(16)
+    expect(built!.params[8]).toBe('m1')
+    expect(built!.params[11]).toBe(ROW_B.url)
   })
 
   it('inserts one values group per row', () => {
-    const built = buildInsertSubtitlesSql('m1', [ROW_A, ROW_B])
-    const groups = built!.sql.match(/\(\?, \?, \?, \?, \?, \?, \?\)/g)
+    const built = buildInsertSubtitlesSql('m1', [ROW_A, ROW_B], '2026-01-01T00:00:00Z')
+    const groups = built!.sql.match(/\(\?, \?, \?, \?, \?, \?, \?, \?\)/g)
     expect(groups).toHaveLength(2)
-    expect(built!.sql).toContain('VALUES (?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?)')
+    expect(built!.sql).toContain('VALUES (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?)')
   })
 
   it('lists every column', () => {
-    const built = buildInsertSubtitlesSql('m1', [ROW_A])
+    const built = buildInsertSubtitlesSql('m1', [ROW_A], '2026-01-01T00:00:00Z')
     expect(built!.sql).toContain(
-      'INSERT INTO episode_subtitles (movie_id, season_no, episode_no, url, lang, label, kind)'
+      'INSERT INTO episode_subtitles (movie_id, season_no, episode_no, url, lang, label, kind, updated_at)'
     )
   })
 
   it('upserts on the primary key so a repeated save is safe', () => {
-    const built = buildInsertSubtitlesSql('m1', [ROW_A])
+    const built = buildInsertSubtitlesSql('m1', [ROW_A], '2026-01-01T00:00:00Z')
     expect(built!.sql).toContain('ON CONFLICT(movie_id, season_no, episode_no) DO UPDATE')
     expect(built!.sql).toContain('url = excluded.url')
+  })
+
+  it('refreshes updated_at on every save so clients bust their cache', () => {
+    const first = buildInsertSubtitlesSql('m1', [ROW_A], '2026-01-01T00:00:00Z')
+    const second = buildInsertSubtitlesSql('m1', [ROW_A], '2026-01-02T00:00:00Z')
+    expect(first!.params[7]).not.toBe(second!.params[7])
+    expect(second!.sql).toContain('updated_at = excluded.updated_at')
   })
 })

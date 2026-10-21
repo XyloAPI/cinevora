@@ -7,8 +7,8 @@ export interface SubtitleRowInput {
   kind: string
 }
 
-const COLUMNS = 'movie_id, season_no, episode_no, url, lang, label, kind'
-const PLACEHOLDER_GROUP = '(?, ?, ?, ?, ?, ?, ?)'
+const COLUMNS = 'movie_id, season_no, episode_no, url, lang, label, kind, updated_at'
+const PLACEHOLDER_GROUP = '(?, ?, ?, ?, ?, ?, ?, ?)'
 
 export function buildDeleteSubtitlesSql(): string {
   return 'DELETE FROM episode_subtitles WHERE movie_id = ?'
@@ -16,7 +16,8 @@ export function buildDeleteSubtitlesSql(): string {
 
 export function buildInsertSubtitlesSql(
   movieId: string,
-  rows: SubtitleRowInput[]
+  rows: SubtitleRowInput[],
+  updatedAt: string
 ): { sql: string; params: any[] } | null {
   if (!rows || rows.length === 0) return null
 
@@ -30,7 +31,8 @@ export function buildInsertSubtitlesSql(
       row.url,
       row.lang,
       row.label,
-      row.kind
+      row.kind,
+      updatedAt
     )
   }
 
@@ -38,7 +40,7 @@ export function buildInsertSubtitlesSql(
     `INSERT INTO episode_subtitles (${COLUMNS})`,
     `VALUES ${groups}`,
     'ON CONFLICT(movie_id, season_no, episode_no) DO UPDATE SET',
-    'url = excluded.url, lang = excluded.lang, label = excluded.label, kind = excluded.kind',
+    'url = excluded.url, lang = excluded.lang, label = excluded.label, kind = excluded.kind, updated_at = excluded.updated_at',
   ].join('\n')
 
   return { sql, params }

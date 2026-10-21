@@ -40,4 +40,29 @@ describe('buildSubtitleProxyUrl', () => {
     expect(url).not.toContain('a b&c=d')
     expect(new URL(url, 'http://x').searchParams.get('movieId')).toBe('a b&c=d')
   })
+
+  it('adds a version parameter so a changed subtitle url is never cached', () => {
+    const url = new URL(
+      buildSubtitleProxyUrl({ movieId: 'm1', season: 0, episode: 0, version: 'https://cdn/a.vtt' }),
+      'http://x'
+    )
+    expect(url.searchParams.get('v')).toBeTruthy()
+  })
+
+  it('produces a different version parameter for a different subtitle url', () => {
+    const a = new URL(
+      buildSubtitleProxyUrl({ movieId: 'm1', season: 0, episode: 0, version: 'https://cdn/a.vtt' }),
+      'http://x'
+    ).searchParams.get('v')
+    const b = new URL(
+      buildSubtitleProxyUrl({ movieId: 'm1', season: 0, episode: 0, version: 'https://cdn/b.vtt' }),
+      'http://x'
+    ).searchParams.get('v')
+    expect(a).not.toBe(b)
+  })
+
+  it('omits the version parameter when none is given', () => {
+    const url = new URL(buildSubtitleProxyUrl({ movieId: 'm1', season: 0, episode: 0 }), 'http://x')
+    expect(url.searchParams.get('v')).toBeNull()
+  })
 })

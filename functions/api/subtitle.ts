@@ -11,6 +11,8 @@ function toTursoArgs(params: any[]): any[] {
   })
 }
 
+import { computeSubtitleEtag, etagMatches } from '../../../src/lib/subtitleCache'
+
 async function tursoQuery(env: any, sql: string, params: any[]): Promise<any[]> {
   const httpUrl = (env.TURSO_DATABASE_URL || '').replace('libsql://', 'https://')
   const resp = await fetch(`${httpUrl}/v2/pipeline`, {
@@ -69,16 +71,24 @@ export async function onRequest(context: any) {
       return jsonError(`Upstream responded ${upstream.status}`, 502)
     }
     const text = await upstream.text()
-    const isSrt = row.url.toLowerCase().split('?')[0].endsWith('.srt')
-
-    return new Response(text, {
-      status: 200,
-      headers: {
-        'Content-Type': isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=3600',
-      },
+    const etag = computeSubtitleEtag({
+      upstreamEtag: upstream.headers.get('etag'),
+      content: text,
     })
+
+    const headers = new Headers()
+    headers.set('ETag', etag)
+    headers.set('Access-Control-Allow-Origin', '*')
+    headers.set('Cache-Control', 'no-cache')
+
+    if (etagMatches(request.headers.get('If-None-Match'), etag)) {
+      return new Response(null, { status: 304, headers })
+    }
+
+    const isSrt = row.url.toLowerCase().split('?')[0].endsWith('.srt')
+    headers.set('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8')
+
+    return new Response(text, { status: 200, headers })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Subtitle error'
     return jsonError(msg, 500)

@@ -103,6 +103,7 @@ export default function WatchPage() {
         lang: subtitleRow.lang,
         label: subtitleRow.label,
         kind: subtitleRow.kind,
+        version: subtitleRow.updated_at || subtitleRow.url,
       }
     : null
 
