@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useMovieBySlug } from '@/hooks/useMovies'
+import { useMovieBySlug, useSubtitle } from '@/hooks/useMovies'
 import { IconPlayerPlayFilled, IconDownload } from '@tabler/icons-react'
 import SEO from '@/components/shared/SEO'
-import { getDownloadUrl } from '@/lib/utils'
+import { VideoPlayer } from '@/components/player'
+import { buildDownloadUrl } from '@/lib/streamEndpoints'
+import { playbackKey } from '@/lib/playbackPosition'
+import { resolveActiveSource, resolveEpisodeSource } from '@/lib/streamUrls'
 import WatchHeader from './WatchHeader'
 import EpisodeSelector from './EpisodeSelector'
 
@@ -25,6 +28,7 @@ export default function WatchPage() {
   const [activeSeason, setActiveSeason] = useState<number>(1)
   const [activeEpisode, setActiveEpisode] = useState<number>(1)
   const [activeServer, setActiveServer] = useState<'server1' | 'server2'>('server1')
+  const [streamError, setStreamError] = useState(false)
 
   // Parse seasons and episodes if it's a TV series
   const isSeries = movie?.type === 'series'
@@ -36,6 +40,10 @@ export default function WatchPage() {
       console.error('Failed to parse seasons list JSON', e)
     }
   }
+
+  const subtitleSeason = isSeries ? activeSeason : 0
+  const subtitleEpisode = isSeries ? activeEpisode : 0
+  const { data: subtitleRow } = useSubtitle(movie?.id, subtitleSeason, subtitleEpisode)
 
   // Set initial active season/episode when movie loads
   useEffect(() => {
@@ -69,25 +77,34 @@ export default function WatchPage() {
     )
   }
 
-  // Resolve available stream URLs
-  let server1Url = movie.streamUrl || ''
-  let server2Url = movie.streamUrl2 || ''
+  // Resolve available stream URLs (shared logic with the backend proxy)
+  const primary = resolveEpisodeSource({
+    streamUrl: movie.streamUrl,
+    streamUrl2: movie.streamUrl2,
+    season: activeSeason,
+    episode: activeEpisode,
+    slot: 1,
+  })
+  const mirror = resolveEpisodeSource({
+    streamUrl: movie.streamUrl,
+    streamUrl2: movie.streamUrl2,
+    season: activeSeason,
+    episode: activeEpisode,
+    slot: 2,
+  })
 
-  if (isSeries && seasonsList.length > 0) {
-    const seasonObj = seasonsList.find((s) => s.season === activeSeason)
-    const episodeObj = seasonObj?.episodes.find((e) => e.episode === activeEpisode)
-    server1Url = episodeObj?.url || ''
-    server2Url = episodeObj?.url2 || ''
-  }
+  const hasServer2 = Boolean(mirror)
+  const currentStreamUrl =
+    resolveActiveSource({ primary, mirror, preferMirror: activeServer === 'server2' }) || ''
 
-  const hasServer2 = Boolean(server2Url && server2Url.trim())
-
-  let currentStreamUrl = server1Url
-  if (activeServer === 'server2' && hasServer2) {
-    currentStreamUrl = server2Url
-  } else if (!server1Url && hasServer2) {
-    currentStreamUrl = server2Url
-  }
+  const subtitle = subtitleRow
+    ? {
+        url: subtitleRow.url,
+        lang: subtitleRow.lang,
+        label: subtitleRow.label,
+        kind: subtitleRow.kind,
+      }
+    : null
 
   return (
     <div className="min-h-screen bg-cinema-950 text-white flex flex-col">
@@ -98,32 +115,41 @@ export default function WatchPage() {
 
       <div className="flex-1 flex items-start justify-center bg-black/50 p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-5xl">
-          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-            {currentStreamUrl ? (
-              <iframe
-                key={currentStreamUrl}
-                src={currentStreamUrl}
-                className="absolute inset-0 w-full h-full rounded-lg bg-black"
-                allowFullScreen
-                allow="autoplay; fullscreen"
-              />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-cinema-900 rounded-lg">
-                <IconPlayerPlayFilled size={48} className="text-white/20 animate-pulse" />
-                <p className="text-white/40 text-sm">
-                  {isSeries
-                    ? `No stream URL set for Season ${activeSeason} Episode ${activeEpisode}`
-                    : 'No stream available for this title'}
-                </p>
-                <Link
-                  to={`/movie/${slug}`}
-                  className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors"
-                >
-                  Back to Details
-                </Link>
-              </div>
-            )}
-          </div>
+          {streamError && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-cinema-red/30 bg-cinema-red/10 px-3 py-2 text-xs text-white/70">
+              <IconPlayerPlayFilled size={14} className="text-cinema-red" />
+              Gagal memuat video. Coba server lain atau cek URL video Anda.
+            </div>
+          )}
+
+          {currentStreamUrl ? (
+            <VideoPlayer
+              key={currentStreamUrl}
+              src={currentStreamUrl}
+              title={movie.title}
+              movieId={movie.id}
+              season={subtitleSeason}
+              episode={subtitleEpisode}
+              storageKey={playbackKey(slug, subtitleSeason, subtitleEpisode)}
+              subtitle={subtitle}
+              onError={() => setStreamError(true)}
+            />
+          ) : (
+            <div className="relative w-full aspect-video flex flex-col items-center justify-center gap-4 bg-cinema-900 rounded-lg">
+              <IconPlayerPlayFilled size={48} className="text-white/20 animate-pulse" />
+              <p className="text-white/40 text-sm">
+                {isSeries
+                  ? `No stream URL set for Season ${activeSeason} Episode ${activeEpisode}`
+                  : 'No stream available for this title'}
+              </p>
+              <Link
+                to={`/movie/${slug}`}
+                className="px-4 py-2 bg-cinema-red text-white text-sm rounded hover:bg-cinema-red-dark transition-colors"
+              >
+                Back to Details
+              </Link>
+            </div>
+          )}
 
           {/* Server Switcher (Only visible if Server 2 is available) */}
           {hasServer2 && (
@@ -134,7 +160,7 @@ export default function WatchPage() {
                   type="button"
                   onClick={() => setActiveServer('server1')}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    activeServer === 'server1' || !server2Url
+                    activeServer === 'server1' || !hasServer2
                       ? 'bg-cinema-red text-white shadow-sm'
                       : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
@@ -145,7 +171,7 @@ export default function WatchPage() {
                   type="button"
                   onClick={() => setActiveServer('server2')}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    activeServer === 'server2' && server2Url
+                    activeServer === 'server2' && hasServer2
                       ? 'bg-cinema-red text-white shadow-sm'
                       : 'text-white/60 hover:text-white hover:bg-white/5'
                   }`}
@@ -192,11 +218,14 @@ export default function WatchPage() {
                 <span>{movie.duration}</span>
               </>
             )}
-            {getDownloadUrl(currentStreamUrl) && (
+            {currentStreamUrl && (
               <a
-                href={getDownloadUrl(currentStreamUrl)!}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={buildDownloadUrl({
+                  movieId: movie.id,
+                  slot: activeServer === 'server2' && hasServer2 ? 2 : 1,
+                  season: subtitleSeason,
+                  episode: subtitleEpisode,
+                })}
                 className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white/70 text-xs rounded hover:bg-white/20 transition-colors"
               >
                 <IconDownload size={14} className="text-green-400" /> Download

@@ -52,6 +52,25 @@ export function useFeaturedMovie() {
   })
 }
 
+export function useSubtitle(movieId: string | undefined, season: number, episode: number) {
+  return useQuery({
+    queryKey: ['subtitles', movieId, season, episode],
+    queryFn: async () => {
+      if (!movieId) return null
+      try {
+        const rows = await db.fetchSubtitles(movieId)
+        const match = rows.find(
+          (row) => Number(row.season_no) === season && Number(row.episode_no) === episode
+        )
+        return match ?? null
+      } catch {
+        return null
+      }
+    },
+    enabled: !!movieId,
+  })
+}
+
 export function useRelatedMovies(movie: Movie | null) {
   return useQuery({
     queryKey: ['movies', 'related', movie?.id],
