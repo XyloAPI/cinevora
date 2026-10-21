@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { IconLanguage } from '@tabler/icons-react'
-import { addMovie, updateMovie } from '@/lib/db'
+import { addMovie, updateMovie, saveSubtitles, fetchSubtitles } from '@/lib/db'
 import { translateToId } from '@/lib/translate'
 import { slugify } from '@/lib/utils'
+import { normalizeDirectUrl } from '@/lib/streamUrls'
 import type { Movie } from '@/types'
 import SeasonsManager from './SeasonsManager'
 
@@ -14,31 +15,10 @@ interface MovieFormProps {
   refetch: () => void
 }
 
-function normalizeStreamUrl(input: string): string {
-  const trimmed = input.trim()
-  if (!trimmed) return ''
-  if (!trimmed.includes('.')) {
-    return `https://streamxylospace.qzz.io/e/${trimmed}`
-  }
-  if (trimmed.includes('streamxylospace')) {
-    const code = trimmed.split('/').filter(Boolean).pop() || ''
-    return `https://streamxylospace.qzz.io/e/${code}`
-  }
-  return trimmed
-}
-
-function normalizeAbyssUrl(input: string): string {
-  const trimmed = input.trim()
-  if (!trimmed) return ''
-  if (!trimmed.includes('.')) {
-    return `https://player.abyssplayer.com/${trimmed}`
-  }
-  if (trimmed.includes('abyss.to') || trimmed.includes('abyssplayer.com')) {
-    const code = trimmed.split('/').filter(Boolean).pop() || ''
-    return `https://player.abyssplayer.com/${code}`
-  }
-  return trimmed
-}
+const SUBTITLE_LANGUAGES = [
+  { value: 'id', label: 'Indonesia' },
+  { value: 'en', label: 'English' },
+] as const
 
 export default function MovieForm({
   editingMovie,
@@ -50,8 +30,10 @@ export default function MovieForm({
   const [taglineText, setTaglineText] = useState('')
   const [streamUrlText, setStreamUrlText] = useState('')
   const [streamUrl2Text, setStreamUrl2Text] = useState('')
+  const [subtitleUrl, setSubtitleUrl] = useState('')
+  const [subtitleLang, setSubtitleLang] = useState<string>('id')
   const [mediaType, setMediaType] = useState<'movie' | 'series'>('movie')
-  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string; url2?: string }> }>>([])
+  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string; url2?: string; sub?: string }> }>>([])
   const [activeSeasonIndex, setActiveSeasonIndex] = useState<number>(0)
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false)
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
@@ -103,11 +85,39 @@ export default function MovieForm({
     }
   }, [editingMovie])
 
+  useEffect(() => {
+    let cancelled = false
+    setSubtitleUrl('')
+    setSubtitleLang('id')
+
+    const movieId = editingMovie.id
+    if (!movieId) return
+
+    fetchSubtitles(movieId)
+      .then((rows) => {
+        if (cancelled) return
+        const match = rows.find(
+          (row) => Number(row.season_no) === 0 && Number(row.episode_no) === 0
+        )
+        if (!match) return
+        setSubtitleUrl(match.url)
+        setSubtitleLang(match.lang || 'id')
+      })
+      .catch(() => {
+        // No subtitle stored yet.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [editingMovie.id])
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSaving(true)
     const form = new FormData(e.currentTarget)
     const isEdit = localMovies.some((m) => m.id === editingMovie.id)
+    const movieId = editingMovie.id || String(Date.now())
     const genreRaw = (form.get('genre') as string || '').split(',').map((g) => g.trim()).filter(Boolean)
     const castRaw = (form.get('cast') as string || '').split(',').map((c) => c.trim()).filter(Boolean)
     const prodRaw = (form.get('productionCompanies') as string || '').split(',').map((c) => c.trim()).filter(Boolean)
@@ -115,20 +125,20 @@ export default function MovieForm({
     const title = (form.get('title') as string) || ''
     const rawStreamUrl = streamUrlText || ''
     const rawStreamUrl2 = streamUrl2Text || ''
-    
+
     let finalStreamUrl = ''
     let finalStreamUrl2 = ''
     let totalSeasons: number | null = null
     let totalEpisodes: number | null = null
-    
+
     if (mediaType === 'series') {
       finalStreamUrl = JSON.stringify(seasonsList)
       finalStreamUrl2 = ''
       totalSeasons = seasonsList.length
       totalEpisodes = seasonsList.reduce((acc, s) => acc + s.episodes.length, 0)
     } else {
-      finalStreamUrl = rawStreamUrl ? normalizeStreamUrl(rawStreamUrl) : ''
-      finalStreamUrl2 = rawStreamUrl2 ? normalizeAbyssUrl(rawStreamUrl2) : ''
+      finalStreamUrl = rawStreamUrl ? normalizeDirectUrl(rawStreamUrl) : ''
+      finalStreamUrl2 = rawStreamUrl2 ? normalizeDirectUrl(rawStreamUrl2) : ''
     }
 
     const data = {
@@ -173,11 +183,42 @@ export default function MovieForm({
     try {
       if (isEdit) {
         await updateMovie(editingMovie.id!, data)
-        toast.success('Series/Movie updated')
       } else {
-        await addMovie({ id: String(Date.now()), ...data })
-        toast.success('Series/Movie added')
+        await addMovie({ id: movieId, ...data })
       }
+
+      const subtitleLabel =
+        SUBTITLE_LANGUAGES.find((lang) => lang.value === subtitleLang)?.label || 'Indonesia'
+      const subtitleRows =
+        mediaType === 'series'
+          ? seasonsList.flatMap((season) =>
+              season.episodes
+                .filter((episode) => (episode.sub || '').trim())
+                .map((episode) => ({
+                  seasonNo: season.season,
+                  episodeNo: episode.episode,
+                  url: (episode.sub || '').trim(),
+                  lang: subtitleLang,
+                  label: subtitleLabel,
+                  kind: 'subtitles',
+                }))
+            )
+          : subtitleUrl.trim()
+            ? [
+                {
+                  seasonNo: 0,
+                  episodeNo: 0,
+                  url: subtitleUrl.trim(),
+                  lang: subtitleLang,
+                  label: subtitleLabel,
+                  kind: 'subtitles',
+                },
+              ]
+            : []
+
+      await saveSubtitles(movieId, subtitleRows)
+
+      toast.success(isEdit ? 'Series/Movie updated' : 'Series/Movie added')
       closeForm()
       refetch()
     } catch {
@@ -318,25 +359,15 @@ export default function MovieForm({
         {mediaType === 'movie' ? (
           <>
             <label className="flex flex-col gap-1 text-[11px] text-white/40">
-              Stream URL (Server 1)
+              Video URL (Server 1)
               <input
                 name="streamUrl"
                 value={streamUrlText}
-                placeholder="StreamXylo slug/URL..."
-                onChange={(e) => {
-                  const val = e.target.value
-                  setStreamUrlText(val)
-                  
-                  const trimmed = val.trim()
-                  if (trimmed.includes('streamxylospace') && (trimmed.includes('/d/') || trimmed.includes('/download/'))) {
-                    setStreamUrlText(normalizeStreamUrl(trimmed))
-                  } else if (/^[a-zA-Z0-9]{12}$/.test(trimmed)) {
-                    setStreamUrlText(normalizeStreamUrl(trimmed))
-                  }
-                }}
+                placeholder="https://cdn.example.com/film.mp4"
+                onChange={(e) => setStreamUrlText(e.target.value)}
                 onBlur={() => {
                   if (streamUrlText.trim()) {
-                    setStreamUrlText(normalizeStreamUrl(streamUrlText))
+                    setStreamUrlText(normalizeDirectUrl(streamUrlText))
                   }
                 }}
                 className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
@@ -344,27 +375,51 @@ export default function MovieForm({
             </label>
 
             <label className="flex flex-col gap-1 text-[11px] text-white/40">
-              Stream URL (Server 2)
+              Video URL (Server 2)
               <input
                 name="streamUrl2"
                 value={streamUrl2Text}
-                placeholder="Abyss slug/URL..."
-                onChange={(e) => {
-                  const val = e.target.value
-                  setStreamUrl2Text(val)
-                  
-                  const trimmed = val.trim()
-                  if (trimmed.includes('abyss.to') || trimmed.includes('abyssplayer.com')) {
-                    setStreamUrl2Text(normalizeAbyssUrl(trimmed))
-                  }
-                }}
+                placeholder="https://cdn2.example.com/film.mp4"
+                onChange={(e) => setStreamUrl2Text(e.target.value)}
                 onBlur={() => {
                   if (streamUrl2Text.trim()) {
-                    setStreamUrl2Text(normalizeAbyssUrl(streamUrl2Text))
+                    setStreamUrl2Text(normalizeDirectUrl(streamUrl2Text))
                   }
                 }}
                 className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
               />
+            </label>
+
+            <label className="flex flex-col gap-1 text-[11px] text-white/40">
+              Subtitle URL (.vtt / .srt)
+              <input
+                name="subtitleUrl"
+                value={subtitleUrl}
+                placeholder="https://cdn.example.com/film.id.vtt"
+                onChange={(e) => setSubtitleUrl(e.target.value)}
+                onBlur={() => {
+                  if (subtitleUrl.trim()) {
+                    setSubtitleUrl(normalizeDirectUrl(subtitleUrl))
+                  }
+                }}
+                className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-[11px] text-white/40">
+              Subtitle Language
+              <select
+                name="subtitleLang"
+                value={subtitleLang}
+                onChange={(e) => setSubtitleLang(e.target.value)}
+                className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+              >
+                {SUBTITLE_LANGUAGES.map((lang) => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </>
         ) : (
@@ -373,8 +428,6 @@ export default function MovieForm({
             setSeasonsList={setSeasonsList}
             activeSeasonIndex={activeSeasonIndex}
             setActiveSeasonIndex={setActiveSeasonIndex}
-            normalizeStreamUrl={normalizeStreamUrl}
-            normalizeAbyssUrl={normalizeAbyssUrl}
           />
         )}
       </div>

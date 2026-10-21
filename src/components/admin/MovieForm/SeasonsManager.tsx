@@ -5,6 +5,7 @@ interface Episode {
   episode: number
   url: string
   url2?: string
+  sub?: string
 }
 
 interface Season {
@@ -17,8 +18,6 @@ interface SeasonsManagerProps {
   setSeasonsList: React.Dispatch<React.SetStateAction<Season[]>>
   activeSeasonIndex: number
   setActiveSeasonIndex: (idx: number) => void
-  normalizeStreamUrl: (input: string) => string
-  normalizeAbyssUrl: (input: string) => string
 }
 
 export default function SeasonsManager({
@@ -26,8 +25,6 @@ export default function SeasonsManager({
   setSeasonsList,
   activeSeasonIndex,
   setActiveSeasonIndex,
-  normalizeStreamUrl,
-  normalizeAbyssUrl,
 }: SeasonsManagerProps) {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
@@ -199,20 +196,12 @@ export default function SeasonsManager({
                   <input
                     type="text"
                     value={ep.url}
-                    placeholder="Server 1 slug/URL..."
+                    placeholder="Server 1 URL (CDN)..."
                     onChange={(e) => {
                       const val = e.target.value
                       const updated = [...seasonsList]
                       updated[activeSeasonIndex].episodes[epIdx].url = val
                       setSeasonsList(updated)
-                    }}
-                    onBlur={() => {
-                      if (ep.url.trim()) {
-                        const normalized = normalizeStreamUrl(ep.url)
-                        const updated = [...seasonsList]
-                        updated[activeSeasonIndex].episodes[epIdx].url = normalized
-                        setSeasonsList(updated)
-                      }
                     }}
                     className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
                   />
@@ -221,20 +210,26 @@ export default function SeasonsManager({
                   <input
                     type="text"
                     value={ep.url2 || ''}
-                    placeholder="Server 2 slug/URL (Abyss)..."
+                    placeholder="Server 2 URL (CDN)..."
                     onChange={(e) => {
                       const val = e.target.value
                       const updated = [...seasonsList]
                       updated[activeSeasonIndex].episodes[epIdx].url2 = val
                       setSeasonsList(updated)
                     }}
-                    onBlur={() => {
-                      if (ep.url2 && ep.url2.trim()) {
-                        const normalized = normalizeAbyssUrl(ep.url2)
-                        const updated = [...seasonsList]
-                        updated[activeSeasonIndex].episodes[epIdx].url2 = normalized
-                        setSeasonsList(updated)
-                      }
+                    className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
+                  />
+
+                  {/* Subtitle Input */}
+                  <input
+                    type="text"
+                    value={ep.sub || ''}
+                    placeholder="Subtitle URL (.vtt / .srt)..."
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const updated = [...seasonsList]
+                      updated[activeSeasonIndex].episodes[epIdx].sub = val
+                      setSeasonsList(updated)
                     }}
                     className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
                   />
