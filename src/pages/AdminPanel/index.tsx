@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useAllMovies, useGenres as useGenresHook } from '@/hooks/useMovies'
 import { slugify } from '@/lib/utils'
 import { deleteMovie, runMigration, backfillSlugs } from '@/lib/db'
+import { genreName } from '@/lib/tmdbGenres'
 import * as tmdb from '@/lib/tmdb'
 import { IconLogout, IconRefresh } from '@tabler/icons-react'
 import type { Movie, TmdbMovieResult } from '@/types'
@@ -139,7 +140,9 @@ export default function AdminPanel() {
     })
     try {
       const { detail, videos, credits } = await tmdb.enrichMovie(tmdbId, tmdbType)
-      const genreNames = detail.genres.map((g) => g.name)
+      const genreNames = detail.genres
+        .map((g) => genreName(g.id) ?? g.name)
+        .filter(Boolean)
       const mapped = tmdb.mapTmdbToMovie(detail, videos, credits, genreNames, tmdbType)
       const { logos } = await tmdb.fetchMovieImages(tmdbId, tmdbType)
       const logoUrl = tmdb.logoUrl(logos)

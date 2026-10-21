@@ -1,5 +1,6 @@
 import { slugify } from './utils'
 import { buildDeleteSubtitlesSql, buildInsertSubtitlesSql, type SubtitleRowInput } from './subtitleSql'
+import { buildGenreMigrationSql } from './genreMigration'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -315,6 +316,16 @@ export async function runMigration() {
     await dbQuery('ALTER TABLE movies ADD COLUMN stream_url_2 TEXT')
   } catch {
     // Column may already exist
+  }
+
+  await migrateGenresToEnglish()
+}
+
+export async function migrateGenresToEnglish(): Promise<void> {
+  try {
+    await dbQuery(buildGenreMigrationSql())
+  } catch {
+    // Migration is best-effort; a failure must not block the panel.
   }
 }
 

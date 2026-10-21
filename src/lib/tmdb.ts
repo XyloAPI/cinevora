@@ -1,4 +1,5 @@
 import type { TmdbMovieResult, TmdbMovieDetail, TmdbVideo, TmdbCredit, TmdbGenre } from '@/types'
+import { TMDB_GENRE_NAMES } from './tmdbGenres'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const IMG_BASE = 'https://image.tmdb.org/t/p'
@@ -9,12 +10,11 @@ async function fetchJson<T>(url: string): Promise<T> {
   return res.json()
 }
 
-const genreCache = new Map<number, string>()
-
 export async function fetchGenres(): Promise<TmdbGenre[]> {
-  const data = await fetchJson<{ genres: TmdbGenre[] }>(`${API_BASE}/tmdb/genre/movie/list`)
-  for (const g of data.genres) genreCache.set(g.id, g.name)
-  return data.genres
+  return Object.entries(TMDB_GENRE_NAMES).map(([id, name]) => ({
+    id: Number(id),
+    name,
+  }))
 }
 
 export async function searchMovies(query: string, type: 'movie' | 'series' = 'movie', page: number = 1): Promise<{ results: TmdbMovieResult[]; total: number; page: number }> {
