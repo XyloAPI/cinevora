@@ -3,6 +3,8 @@ import type { Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import crypto from 'crypto'
+import { Readable } from 'stream'
+import { resolveEpisodeSource, sanitizeFilename } from './src/lib/streamUrls'
 
 dotenv.config()
 
@@ -192,8 +194,127 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+function toTursoArgs(params: any[]): any[] {
+  return params.map((val: any) => {
+    if (val === null || val === undefined) return { type: 'null' }
+    if (typeof val === 'boolean') return { type: 'integer', value: val ? '1' : '0' }
+    if (typeof val === 'number') {
+      if (Number.isInteger(val)) return { type: 'integer', value: val.toString() }
+      return { type: 'float', value: val }
+    }
+    if (val && typeof val === 'object' && 'type' in val) return val
+    return { type: 'text', value: val.toString() }
+  })
+}
+
+async function tursoQuery(sql: string, params: any[]): Promise<any[]> {
+  const httpUrl = (process.env.TURSO_DATABASE_URL || '').replace('libsql://', 'https://')
+  const resp = await fetch(`${httpUrl}/v2/pipeline`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.TURSO_AUTH_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [{ type: 'execute', stmt: { sql, args: toTursoArgs(params) } }],
+    }),
+  })
+  const data = await resp.json()
+  const first = data.results?.[0]
+  if (first?.error) {
+    throw new Error(first.error.message || 'Turso query failed')
+  }
+  const result = first?.response?.result
+  if (!result) throw new Error('Turso returned no result')
+  const cols: { name: string }[] = result.cols || []
+  const rawRows: { type: string; value: any }[][] = result.rows || []
+  return rawRows.map((row) => Object.fromEntries(cols.map((col, i) => [col.name, row[i]?.value ?? null])))
+}
+
+function readParam(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
+  return ''
+}
+
+// Download proxy: the browser asks for a movie, the server resolves the CDN url
+// from the database so the client can never use this as an open proxy.
+app.get('/api/stream/download', async (req: any, res: any) => {
+  try {
+    const movieId = readParam(req.query.movieId)
+    const slot = readParam(req.query.slot) === '2' ? 2 : 1
+    const season = Number(readParam(req.query.season) || 0)
+    const episode = Number(readParam(req.query.episode) || 0)
+    if (!movieId) return res.status(400).json({ error: 'movieId is required' })
+
+    const rows = await tursoQuery('SELECT id, title, stream_url, stream_url_2 FROM movies WHERE id = ?', [movieId])
+    const movie = rows[0]
+    if (!movie) return res.status(404).json({ error: 'Movie not found' })
+
+    const url = resolveEpisodeSource({
+      streamUrl: movie.stream_url,
+      streamUrl2: movie.stream_url_2,
+      season,
+      episode,
+      slot,
+    })
+    if (!url) return res.status(404).json({ error: 'No stream URL for this episode' })
+
+    const range = req.headers.range
+    const upstream = await fetch(url, { headers: range ? { Range: range } : {} })
+    if (!upstream.ok || !upstream.body) {
+      return res.status(502).json({ error: `Upstream responded ${upstream.status}` })
+    }
+
+    res.setHeader('Content-Type', 'application/octet-stream')
+    res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(movie.title)}.mp4"`)
+    const contentLength = upstream.headers.get('content-length')
+    const contentRange = upstream.headers.get('content-range')
+    const acceptRanges = upstream.headers.get('accept-ranges')
+    if (contentLength) res.setHeader('Content-Length', contentLength)
+    if (contentRange) res.setHeader('Content-Range', contentRange)
+    if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges)
+    res.status(upstream.status === 206 ? 206 : 200)
+    Readable.fromWeb(upstream.body as any).pipe(res)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Download error' })
+  }
+})
+
+// Subtitle proxy: keeps the track same-origin so text-track CORS never bites.
+app.get('/api/subtitle', async (req: any, res: any) => {
+  try {
+    const movieId = readParam(req.query.movieId)
+    const season = Number(readParam(req.query.season) || 0)
+    const episode = Number(readParam(req.query.episode) || 0)
+    if (!movieId) return res.status(400).json({ error: 'movieId is required' })
+
+    const rows = await tursoQuery(
+      'SELECT url, lang, label, kind FROM episode_subtitles WHERE movie_id = ? AND season_no = ? AND episode_no = ?',
+      [movieId, season, episode]
+    )
+    const row = rows[0]
+    if (!row) return res.status(404).json({ error: 'Subtitle not found' })
+
+    const upstream = await fetch(row.url)
+    if (!upstream.ok) {
+      return res.status(502).json({ error: `Upstream responded ${upstream.status}` })
+    }
+    const text = await upstream.text()
+    const isSrt = row.url.toLowerCase().split('?')[0].endsWith('.srt')
+    res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Cache-Control', 'public, max-age=3600')
+    res.status(200).send(text)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Subtitle error' })
+  }
+})
+
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`)
   console.log(`TMDB API proxy: http://localhost:${PORT}/api/tmdb/...`)
   console.log(`Database proxy: http://localhost:${PORT}/api/db/query`)
+  console.log(`Download proxy: http://localhost:${PORT}/api/stream/download`)
+  console.log(`Subtitle proxy: http://localhost:${PORT}/api/subtitle`)
 })
