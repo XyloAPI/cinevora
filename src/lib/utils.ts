@@ -12,20 +12,6 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-export function getDownloadUrl(streamUrl: string | null | undefined): string | null {
-  if (!streamUrl) return null
-  try {
-    const url = new URL(streamUrl)
-    const segments = url.pathname.split('/').filter(Boolean)
-    const eIndex = segments.findIndex((s) => s === 'e')
-    const streamId = eIndex !== -1 && segments[eIndex + 1] ? segments[eIndex + 1] : null
-    if (!streamId) return null
-    return `${url.origin}/download/${streamId}`
-  } catch {
-    return null
-  }
-}
-
 export function getYoutubeEmbedUrl(url: string | null | undefined): string | null {
   if (!url) return null
   try {

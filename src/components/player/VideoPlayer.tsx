@@ -83,9 +83,12 @@ export default function VideoPlayer({
     if (saved <= 0) return
 
     const duration = player.duration
-    if (Number.isFinite(duration) && saved > duration - RESUME_TAIL_SECONDS) {
-      clearPlaybackPosition(storageKey)
-      return
+    if (Number.isFinite(duration) && duration > 0) {
+      const tail = Math.min(RESUME_TAIL_SECONDS, duration * 0.1)
+      if (saved > duration - tail) {
+        clearPlaybackPosition(storageKey)
+        return
+      }
     }
 
     try {
@@ -110,6 +113,26 @@ export default function VideoPlayer({
     errorNotifiedRef.current = true
     onError?.()
   }, [onError])
+
+  // Show the subtitle track as soon as it is registered with the player.
+  useEffect(() => {
+    if (!subtitle) return
+    const player = playerRef.current
+    if (!player) return
+
+    let cancelled = false
+    const timer = window.setInterval(() => {
+      if (cancelled) return
+      if (player.textTracks.length === 0) return
+      window.clearInterval(timer)
+      player.remoteControl.changeTextTrackMode(0, 'showing')
+    }, 150)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [subtitle, src])
 
   const trackSrc = subtitle
     ? buildSubtitleProxyUrl({ movieId, season, episode })
@@ -140,6 +163,7 @@ export default function VideoPlayer({
               kind={subtitle.kind as 'subtitles'}
               label={subtitle.label}
               lang={subtitle.lang}
+              default
             />
           )}
         </MediaProvider>
