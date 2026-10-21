@@ -143,8 +143,9 @@ export default function VideoPlayer({
       <MediaPlayer
         ref={playerRef}
         src={src}
-        title={title}
+        aria-label={title}
         aspectRatio="16/9"
+        streamType="on-demand"
         keyShortcuts={MEDIA_KEY_SHORTCUTS}
         onCanPlay={handleCanPlay}
         onTimeUpdate={handleTimeUpdate}

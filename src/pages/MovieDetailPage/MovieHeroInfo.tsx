@@ -66,16 +66,11 @@ export default function MovieHeroInfo({
           </div>
 
           <div className="flex-1 min-w-0">
-            {movie.quality && (
+            {movie.type === 'series' && (
               <div className="flex items-center gap-2 mb-3">
-                <span className="px-2.5 py-0.5 bg-cinema-red text-white text-[10px] font-bold uppercase tracking-wider rounded-sm">
-                  {movie.quality}
+                <span className="px-2.5 py-0.5 bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider rounded-sm">
+                  Series
                 </span>
-                {movie.type === 'series' && (
-                  <span className="px-2.5 py-0.5 bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider rounded-sm">
-                    Series
-                  </span>
-                )}
               </div>
             )}
 
