@@ -1,4 +1,5 @@
 import { slugify } from './utils'
+import { buildDeleteSubtitlesSql, buildInsertSubtitlesSql, type SubtitleRowInput } from './subtitleSql'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -233,6 +234,31 @@ export async function upsertMovie(movie: DbMovie) {
   }
 }
 
+export interface DbEpisodeSubtitle {
+  movie_id: string
+  season_no: number
+  episode_no: number
+  url: string
+  lang: string
+  label: string
+  kind: string
+}
+
+export async function fetchSubtitles(movieId: string): Promise<DbEpisodeSubtitle[]> {
+  return dbQuery<DbEpisodeSubtitle>(
+    'SELECT movie_id, season_no, episode_no, url, lang, label, kind FROM episode_subtitles WHERE movie_id = ?',
+    [movieId]
+  )
+}
+
+export async function saveSubtitles(movieId: string, rows: SubtitleRowInput[]): Promise<void> {
+  await dbQuery(buildDeleteSubtitlesSql(), [movieId])
+  const built = buildInsertSubtitlesSql(movieId, rows)
+  if (built) {
+    await dbQuery(built.sql, built.params)
+  }
+}
+
 export async function runMigration() {
   await dbQuery(`CREATE TABLE IF NOT EXISTS movies (
     id TEXT PRIMARY KEY,
@@ -272,6 +298,17 @@ export async function runMigration() {
     production_companies TEXT,
     status TEXT,
     provider_id INTEGER
+  )`)
+
+  await dbQuery(`CREATE TABLE IF NOT EXISTS episode_subtitles (
+    movie_id TEXT NOT NULL,
+    season_no INTEGER NOT NULL DEFAULT 0,
+    episode_no INTEGER NOT NULL DEFAULT 0,
+    url TEXT NOT NULL,
+    lang TEXT NOT NULL DEFAULT 'id',
+    label TEXT NOT NULL DEFAULT 'Indonesia',
+    kind TEXT NOT NULL DEFAULT 'subtitles',
+    PRIMARY KEY (movie_id, season_no, episode_no)
   )`)
 
   try {
