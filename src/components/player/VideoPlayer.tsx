@@ -240,7 +240,7 @@ export default function VideoPlayer({
       </MediaPlayer>
 
       <div
-        className={`pointer-events-none absolute inset-0 z-20 grid place-items-center transition-all duration-200 ease-out will-change-[opacity,transform] ${
+        className={`pointer-events-none absolute inset-0 z-20 grid place-items-center transition-all duration-200 ease-out ${
           showGlassButton ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
       >
