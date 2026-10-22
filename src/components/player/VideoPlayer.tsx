@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   MediaPlayer,
   MediaProvider,
-  Track,
+  TextTrack,
   MEDIA_KEY_SHORTCUTS,
   type MediaPlayerInstance,
   type MediaTimeUpdateEventDetail,
 } from '@vidstack/react'
 import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/layouts/default'
+import GlassPlayButton from './GlassPlayButton'
 import { detectSubtitleType } from '@/lib/streamUrls'
 import { buildSubtitleProxyUrl } from '@/lib/streamEndpoints'
 import {
@@ -54,6 +55,9 @@ export default function VideoPlayer({
   const restoredRef = useRef(false)
   const lastSaveRef = useRef(0)
   const errorNotifiedRef = useRef(false)
+  const subtitleTrackRef = useRef<TextTrack | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     restoredRef.current = false
@@ -115,6 +119,16 @@ export default function VideoPlayer({
     onError?.()
   }, [onError])
 
+  const togglePlayback = useCallback(() => {
+    const player = playerRef.current
+    if (!player) return
+    if (player.paused) {
+      void player.play()
+    } else {
+      void player.pause()
+    }
+  }, [])
+
   // Show the subtitle track as soon as it is registered with the player.
   useEffect(() => {
     if (!subtitle) return
@@ -144,8 +158,60 @@ export default function VideoPlayer({
       })
     : null
 
+  // The track instance is created outside the effect on purpose: React's
+  // StrictMode runs the effect twice, and adding the same instance twice is
+  // deduplicated by Vidstack's track list. Creating a new instance per run
+  // would register two entries and clear the `default` flag.
+  const subtitleTrack = useMemo(() => {
+    if (!subtitle || !trackSrc) return null
+    return new TextTrack({
+      src: trackSrc,
+      type: detectSubtitleType(subtitle.url),
+      kind: 'subtitles',
+      label: subtitle.label,
+      language: subtitle.lang,
+      default: true,
+    })
+  }, [trackSrc, subtitle?.url, subtitle?.lang, subtitle?.label])
+
+  useEffect(() => {
+    const player = playerRef.current
+    if (!player || !subtitleTrack) return
+
+    // The previous track is removed only when it is replaced. Removing it in
+    // the effect cleanup would kill the track (Vidstack nulls its mode-change
+    // handler on remove) and React's StrictMode runs cleanups between the two
+    // effect passes.
+    const previous = subtitleTrackRef.current
+    if (previous && previous !== subtitleTrack) {
+      player.textTracks.remove(previous)
+    }
+    subtitleTrackRef.current = subtitleTrack
+
+    player.textTracks.add(subtitleTrack)
+
+    // Drop stale duplicates of the same language, keeping the newest one.
+    for (const other of player.textTracks.toArray()) {
+      if (other !== subtitleTrack && other.language === subtitleTrack.language) {
+        player.textTracks.remove(other)
+      }
+    }
+
+    // Turn the caption on ourselves: Vidstack's own auto-selection only runs
+    // once the provider is ready, which is too late for a late-mounted track.
+    try {
+      subtitleTrack.mode = 'showing'
+    } catch {
+      // Track is not attached to a media element yet.
+    }
+  }, [subtitleTrack])
+
   return (
-    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
+    <div
+      className="relative w-full aspect-video bg-black rounded-lg overflow-hidden"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <MediaPlayer
         ref={playerRef}
         src={src}
@@ -155,27 +221,27 @@ export default function VideoPlayer({
         keyShortcuts={MEDIA_KEY_SHORTCUTS}
         onCanPlay={handleCanPlay}
         onTimeUpdate={handleTimeUpdate}
-        onPause={savePosition}
+        onPlay={() => setPlaying(true)}
+        onPause={() => {
+          setPlaying(false)
+          savePosition()
+        }}
         onEnded={() => {
+          setPlaying(false)
           savePosition()
           onEnded?.()
         }}
         onError={handleError}
       >
-        <MediaProvider>
-          {subtitle && trackSrc && (
-            <Track
-              src={trackSrc}
-              type={detectSubtitleType(subtitle.url)}
-              kind={subtitle.kind as 'subtitles'}
-              label={subtitle.label}
-              lang={subtitle.lang}
-              default
-            />
-          )}
-        </MediaProvider>
+        <MediaProvider />
         <DefaultVideoLayout icons={defaultLayoutIcons} colorScheme="dark" />
       </MediaPlayer>
+
+      {(!playing || hovered) && (
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+          <GlassPlayButton playing={playing} onClick={togglePlayback} />
+        </div>
+      )}
     </div>
   )
 }
