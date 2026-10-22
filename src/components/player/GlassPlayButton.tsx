@@ -43,7 +43,7 @@ export default function GlassPlayButton({
             <feTurbulence
               type="fractalNoise"
               baseFrequency="0.006 0.012"
-              numOctaves="2"
+              numOctaves="1"
               seed="4"
               result="noise"
             />
@@ -88,8 +88,9 @@ export default function GlassPlayButton({
         {/* Bright rim catching the light */}
         <span className="pointer-events-none absolute inset-0 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.2)]" />
 
-        {/* Liquid shimmer on hover */}
-        <span className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(255,255,255,0.26),rgba(255,255,255,0.02)_38%,rgba(255,255,255,0.18)_68%,rgba(255,255,255,0.26))] blur-[2px] animate-[spin_7s_linear_infinite]" />
+        {/* Liquid shimmer - always visible so the effect is there from the
+            first frame, brightening on hover */}
+        <span className="pointer-events-none absolute inset-0 rounded-full opacity-40 transition-opacity duration-200 ease-out group-hover:opacity-100 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(255,255,255,0.3),rgba(255,255,255,0.02)_38%,rgba(255,255,255,0.2)_68%,rgba(255,255,255,0.3))] blur-[2px] animate-[spin_4s_linear_infinite]" />
 
         <span className="relative text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
           {playing ? (
