@@ -129,6 +129,8 @@ export default function VideoPlayer({
     }
   }, [])
 
+  const showGlassButton = !playing || hovered
+
   // Show the subtitle track as soon as it is registered with the player.
   useEffect(() => {
     if (!subtitle) return
@@ -237,11 +239,17 @@ export default function VideoPlayer({
         <DefaultVideoLayout icons={defaultLayoutIcons} colorScheme="dark" />
       </MediaPlayer>
 
-      {(!playing || hovered) && (
-        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-          <GlassPlayButton playing={playing} onClick={togglePlayback} />
-        </div>
-      )}
+      <div
+        className={`pointer-events-none absolute inset-0 z-20 grid place-items-center transition-all duration-300 ease-out ${
+          showGlassButton ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        }`}
+      >
+        <GlassPlayButton
+          playing={playing}
+          onClick={togglePlayback}
+          className={showGlassButton ? 'pointer-events-auto' : 'pointer-events-none'}
+        />
+      </div>
     </div>
   )
 }
