@@ -217,6 +217,7 @@ export default function VideoPlayer({
       <MediaPlayer
         ref={playerRef}
         src={src}
+        playsInline
         aria-label={title}
         aspectRatio="16/9"
         streamType="on-demand"
@@ -236,7 +237,11 @@ export default function VideoPlayer({
         onError={handleError}
       >
         <MediaProvider />
-        <DefaultVideoLayout icons={defaultLayoutIcons} colorScheme="dark" />
+        <DefaultVideoLayout
+          icons={defaultLayoutIcons}
+          colorScheme="dark"
+          slots={{ playButton: null }}
+        />
       </MediaPlayer>
 
       <div
