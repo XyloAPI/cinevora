@@ -4,7 +4,6 @@ import {
   parseEpisodesTree,
   resolveEpisodeSource,
   resolveActiveSource,
-  detectSubtitleType,
   sanitizeFilename,
 } from '@/lib/streamUrls'
 
@@ -198,28 +197,6 @@ describe('resolveActiveSource', () => {
 
   it('treats empty strings as missing', () => {
     expect(resolveActiveSource({ primary: '', mirror: '', preferMirror: true })).toBeNull()
-  })
-})
-
-describe('detectSubtitleType', () => {
-  it('detects vtt', () => {
-    expect(detectSubtitleType('https://x/a.vtt')).toBe('vtt')
-  })
-
-  it('detects srt', () => {
-    expect(detectSubtitleType('https://x/a.srt')).toBe('srt')
-  })
-
-  it('detects uppercase extension', () => {
-    expect(detectSubtitleType('https://x/a.SRT')).toBe('srt')
-  })
-
-  it('ignores query string', () => {
-    expect(detectSubtitleType('https://x/a.srt?token=abc')).toBe('srt')
-  })
-
-  it('defaults to vtt for unknown extension', () => {
-    expect(detectSubtitleType('https://x/a')).toBe('vtt')
   })
 })
 

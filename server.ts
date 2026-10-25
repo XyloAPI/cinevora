@@ -6,7 +6,7 @@ import crypto from 'crypto'
 import { Readable } from 'stream'
 import { resolveEpisodeSource, sanitizeFilename } from './src/lib/streamUrls'
 import { computeSubtitleEtag, etagMatches } from './src/lib/subtitleCache'
-import { ensureVtt, stripAssTags } from './src/lib/subtitleFormat'
+import { ensureVtt } from './src/lib/subtitleFormat'
 
 dotenv.config()
 
@@ -391,9 +391,8 @@ app.get('/api/subtitle', async (req: any, res: any) => {
     if (!upstream.ok) {
       return res.status(502).json({ error: `Upstream responded ${upstream.status}` })
     }
-    const isSrt = row.url.toLowerCase().split(/[?#]/)[0].endsWith('.srt')
     const raw = await upstream.text()
-    const text = isSrt ? stripAssTags(raw) : ensureVtt(raw)
+    const text = ensureVtt(raw)
     const etag = computeSubtitleEtag({
       upstreamEtag: upstream.headers.get('etag'),
       content: text,
@@ -407,7 +406,7 @@ app.get('/api/subtitle', async (req: any, res: any) => {
       return res.status(304).end()
     }
 
-    res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8')
+    res.setHeader('Content-Type', 'text/vtt; charset=utf-8')
     res.status(200).send(text)
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Subtitle error' })

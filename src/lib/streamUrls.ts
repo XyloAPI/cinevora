@@ -97,11 +97,6 @@ export function resolveActiveSource(params: {
   return primary || mirror || null
 }
 
-export function detectSubtitleType(url: string): 'vtt' | 'srt' {
-  const path = (url ?? '').split(/[?#]/)[0].toLowerCase()
-  return path.endsWith('.srt') ? 'srt' : 'vtt'
-}
-
 export function sanitizeFilename(name: string): string {
   const cleaned = (name ?? '')
     .replace(ILLEGAL_FILENAME_CHARS, '')

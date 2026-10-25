@@ -12,7 +12,7 @@ function toTursoArgs(params: any[]): any[] {
 }
 
 import { computeSubtitleEtag, etagMatches } from '../../src/lib/subtitleCache'
-import { ensureVtt, stripAssTags } from '../../src/lib/subtitleFormat'
+import { ensureVtt } from '../../src/lib/subtitleFormat'
 
 async function tursoQuery(env: any, sql: string, params: any[]): Promise<any[]> {
   const httpUrl = (env.TURSO_DATABASE_URL || '').replace('libsql://', 'https://')
@@ -71,9 +71,8 @@ export async function onRequest(context: any) {
     if (!upstream.ok) {
       return jsonError(`Upstream responded ${upstream.status}`, 502)
     }
-    const isSrt = row.url.toLowerCase().split(/[?#]/)[0].endsWith('.srt')
     const raw = await upstream.text()
-    const text = isSrt ? stripAssTags(raw) : ensureVtt(raw)
+    const text = ensureVtt(raw)
     const etag = computeSubtitleEtag({
       upstreamEtag: upstream.headers.get('etag'),
       content: text,
@@ -88,7 +87,7 @@ export async function onRequest(context: any) {
       return new Response(null, { status: 304, headers })
     }
 
-    headers.set('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8')
+    headers.set('Content-Type', 'text/vtt; charset=utf-8')
 
     return new Response(text, { status: 200, headers })
   } catch (err) {

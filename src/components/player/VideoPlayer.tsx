@@ -9,7 +9,6 @@ import {
 } from '@vidstack/react'
 import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/layouts/default'
 import GlassPlayButton from './GlassPlayButton'
-import { detectSubtitleType } from '@/lib/streamUrls'
 import { buildSubtitleProxyUrl } from '@/lib/streamEndpoints'
 import {
   clearPlaybackPosition,
@@ -168,7 +167,7 @@ export default function VideoPlayer({
     if (!subtitle || !trackSrc) return null
     return new TextTrack({
       src: trackSrc,
-      type: detectSubtitleType(subtitle.url),
+      type: 'vtt',
       kind: 'subtitles',
       label: subtitle.label,
       language: subtitle.lang,
