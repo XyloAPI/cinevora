@@ -16,15 +16,13 @@ describe('hashString', () => {
 })
 
 describe('computeSubtitleEtag', () => {
-  it('uses the upstream etag when present', () => {
-    expect(computeSubtitleEtag({ upstreamEtag: 'abc123', content: 'WEBVTT' })).toBe('"abc123"')
+  it('ignores the upstream etag because the body is transformed', () => {
+    expect(computeSubtitleEtag({ upstreamEtag: 'abc123', content: 'WEBVTT' })).toBe(
+      computeSubtitleEtag({ content: 'WEBVTT' })
+    )
   })
 
-  it('strips the weak validator prefix from the upstream etag', () => {
-    expect(computeSubtitleEtag({ upstreamEtag: 'W/"abc123"', content: 'WEBVTT' })).toBe('"abc123"')
-  })
-
-  it('derives the etag from the content when the upstream has none', () => {
+  it('derives the etag from the content', () => {
     const etag = computeSubtitleEtag({ content: 'WEBVTT\nhalo' })
     expect(etag.startsWith('"')).toBe(true)
     expect(etag.endsWith('"')).toBe(true)

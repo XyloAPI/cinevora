@@ -78,7 +78,7 @@ export default function PlatformsRow() {
       </div>
 
       {/* Grid/Row of platform icons */}
-      <div className="flex items-center justify-start sm:justify-start md:justify-center gap-4 overflow-x-auto pt-3 pb-5 px-2 scroll-hidden select-none">
+      <div className="flex items-center justify-start sm:justify-start md:justify-center gap-5 sm:gap-6 md:gap-7 overflow-x-auto pt-2 pb-5 px-2 scroll-hidden select-none">
         {platforms.map((p) => {
           const isClickable = !!p.targetRowId
           
@@ -87,47 +87,31 @@ export default function PlatformsRow() {
               key={p.id}
               onClick={() => p.targetRowId && handleScrollToRow(p.targetRowId)}
               disabled={!isClickable}
-              className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 rounded-2xl bg-gradient-to-b from-[#18191e]/90 to-[#0e0f12]/95 border flex items-center justify-center transition-all duration-300 relative z-10 hover:z-30 group overflow-hidden ${
+              className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border transition-all duration-300 relative z-10 hover:z-30 group shadow-md hover:shadow-xl hover:shadow-black/70 ${
                 isClickable 
-                  ? 'border-white/[0.08] hover:border-white/30 hover:scale-105 cursor-pointer shadow-lg hover:shadow-black/80' 
-                  : 'border-white/[0.03] opacity-25 cursor-not-allowed'
+                  ? 'border-white/[0.08] hover:border-white/30 hover:scale-105 cursor-pointer' 
+                  : 'border-white/[0.03] opacity-30 cursor-not-allowed'
               }`}
             >
-              {/* Radial glow background on hover */}
-              {isClickable && (
-                <div className={`absolute inset-0 bg-gradient-to-b ${p.glowColor} opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
-              )}
-              
-              {/* Subtle top border highlight */}
-              {isClickable && (
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.2] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              )}
+              <img
+                src={`/assets/logos/${p.id}.avif`}
+                draggable={false}
+                className="w-full h-full object-cover select-none transition-transform duration-300 group-hover:scale-105"
+                alt={p.name}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  const parent = e.currentTarget.parentElement
+                  if (parent) {
+                    const fallback = parent.querySelector('.logo-text-fallback')
+                    if (fallback) fallback.classList.remove('hidden')
+                  }
+                }}
+              />
 
-              {/* Logo Container */}
-              <div className="w-full h-full flex items-center justify-center p-3 relative z-10">
-                <img
-                  src={`/assets/logos/${p.id}.avif`}
-                  className={`w-[85%] h-[85%] object-contain transition-all duration-500 ${
-                    isClickable 
-                      ? 'opacity-85 group-hover:opacity-100 group-hover:scale-110' 
-                      : 'opacity-40 grayscale'
-                  }`}
-                  alt={p.name}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                    const parent = e.currentTarget.parentElement
-                    if (parent) {
-                      const fallback = parent.querySelector('.logo-text-fallback')
-                      if (fallback) fallback.classList.remove('hidden')
-                    }
-                  }}
-                />
-
-                {/* Text Fallback */}
-                <span className="logo-text-fallback hidden text-xs sm:text-sm font-black tracking-widest uppercase opacity-70">
-                  {p.logoPlaceholderText}
-                </span>
-              </div>
+              {/* Text Fallback */}
+              <span className="logo-text-fallback hidden w-full h-full bg-cinema-800 flex items-center justify-center text-xs sm:text-sm font-black tracking-widest uppercase opacity-70">
+                {p.logoPlaceholderText}
+              </span>
             </button>
           )
         })}

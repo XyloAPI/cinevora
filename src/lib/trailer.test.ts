@@ -48,15 +48,21 @@ describe('getTrailerSource', () => {
     expect(source?.type).toBe('file')
   })
 
+  it('detects convex cloud and storage urls without extensions', () => {
+    const convexUrl =
+      'https://animated-goshawk-972.convex.cloud/api/storage/8a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d'
+    const source = getTrailerSource(convexUrl)
+    expect(source).toEqual({ type: 'file', url: convexUrl })
+  })
+
   it('returns null for an empty url', () => {
     expect(getTrailerSource('')).toBeNull()
     expect(getTrailerSource(null)).toBeNull()
     expect(getTrailerSource(undefined)).toBeNull()
   })
 
-  it('returns null for an unsupported url', () => {
-    expect(getTrailerSource('https://vimeo.com/12345')).toBeNull()
-    expect(getTrailerSource('https://example.com/page')).toBeNull()
+  it('returns null for invalid string', () => {
+    expect(getTrailerSource('not a url')).toBeNull()
   })
 })
 
@@ -68,11 +74,18 @@ describe('isDirectVideoUrl', () => {
     expect(isDirectVideoUrl('https://x/a.mov')).toBe(true)
   })
 
+  it('accepts cloud storage urls without extensions', () => {
+    expect(
+      isDirectVideoUrl('https://animated-goshawk-972.convex.cloud/api/storage/8a1b2c3d')
+    ).toBe(true)
+  })
+
   it('rejects youtube urls', () => {
     expect(isDirectVideoUrl('https://www.youtube.com/watch?v=abc')).toBe(false)
   })
 
-  it('rejects non-video urls', () => {
-    expect(isDirectVideoUrl('https://example.com')).toBe(false)
+  it('rejects non-url strings', () => {
+    expect(isDirectVideoUrl('not a url')).toBe(false)
+    expect(isDirectVideoUrl('')).toBe(false)
   })
 })

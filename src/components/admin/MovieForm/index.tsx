@@ -5,6 +5,7 @@ import { addMovie, updateMovie, saveSubtitles, fetchSubtitles } from '@/lib/db'
 import { translateToId } from '@/lib/translate'
 import { slugify } from '@/lib/utils'
 import { normalizeDirectUrl } from '@/lib/streamUrls'
+import Select from '@/components/ui/select'
 import type { Movie } from '@/types'
 import SeasonsManager from './SeasonsManager'
 
@@ -316,13 +317,12 @@ export default function MovieForm({
             <label className="flex flex-col gap-1 text-[11px] text-white/40">Trailer URL<input name="trailerUrl" defaultValue={editingMovie.trailerUrl || ''} placeholder="YouTube URL atau file CDN (.mp4 / .webm)" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">
           Type
-          <select
-            name="type"
+          <Select
             value={mediaType}
-            onChange={(e) => {
-              const val = e.target.value as 'movie' | 'series'
-              setMediaType(val)
-              if (val === 'series' && seasonsList.length === 0) {
+            onChange={(val) => {
+              const next = val as 'movie' | 'series'
+              setMediaType(next)
+              if (next === 'series' && seasonsList.length === 0) {
                 setSeasonsList([
                   {
                     season: 1,
@@ -332,28 +332,30 @@ export default function MovieForm({
                 setActiveSeasonIndex(0)
               }
             }}
-            className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
-          >
-            <option value="movie">Movie</option>
-            <option value="series">Series</option>
-          </select>
+            options={[
+              { value: 'movie', label: 'Movie' },
+              { value: 'series', label: 'Series' },
+            ]}
+            className="text-[12px] px-2 py-1.5 mt-0.5 w-full"
+          />
         </label>
 
         <label className="flex flex-col gap-1 text-[11px] text-white/40">
           Platform / Provider
-          <select
+          <Select
             name="providerId"
-            defaultValue={editingMovie.providerId || ''}
-            className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
-          >
-            <option value="">None / Default</option>
-            <option value="8">Netflix</option>
-            <option value="122">Disney+ Hotstar</option>
-            <option value="158">Viu</option>
-            <option value="119">Prime Video</option>
-            <option value="1899">HBO Max / HBO Go</option>
-            <option value="350">Apple TV+</option>
-          </select>
+            defaultValue={String(editingMovie.providerId || '')}
+            options={[
+              { value: '', label: 'None / Default' },
+              { value: '8', label: 'Netflix' },
+              { value: '122', label: 'Disney+ Hotstar' },
+              { value: '158', label: 'Viu' },
+              { value: '119', label: 'Prime Video' },
+              { value: '1899', label: 'HBO Max / HBO Go' },
+              { value: '350', label: 'Apple TV+' },
+            ]}
+            className="text-[12px] px-2 py-1.5 mt-0.5 w-full"
+          />
         </label>
 
         {mediaType === 'movie' ? (
@@ -408,18 +410,12 @@ export default function MovieForm({
 
             <label className="flex flex-col gap-1 text-[11px] text-white/40">
               Subtitle Language
-              <select
-                name="subtitleLang"
+              <Select
                 value={subtitleLang}
-                onChange={(e) => setSubtitleLang(e.target.value)}
-                className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
-              >
-                {SUBTITLE_LANGUAGES.map((lang) => (
-                  <option key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setSubtitleLang}
+                options={SUBTITLE_LANGUAGES.map((lang) => ({ value: lang.value, label: lang.label }))}
+                className="text-[12px] px-2 py-1.5 mt-0.5 w-full"
+              />
             </label>
           </>
         ) : (

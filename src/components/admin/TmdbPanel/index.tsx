@@ -1,4 +1,5 @@
 import { IconMovie, IconSearch } from '@tabler/icons-react'
+import Select from '@/components/ui/select'
 import type { TmdbMovieResult } from '@/types'
 import SearchResults from './SearchResults'
 import DiscoverList from './DiscoverList'
@@ -54,14 +55,15 @@ export default function TmdbPanel({
       </div>
 
       <div className="flex gap-2 mb-3">
-        <select
+        <Select
           value={tmdbType}
-          onChange={(e) => setTmdbType(e.target.value as 'movie' | 'series')}
-          className="bg-cinema-800 text-white text-[12px] px-2 py-1.5 rounded border border-white/[0.06] outline-none"
-        >
-          <option value="movie">Movie</option>
-          <option value="series">Series</option>
-        </select>
+          onChange={(val) => setTmdbType(val as 'movie' | 'series')}
+          options={[
+            { value: 'movie', label: 'Movie' },
+            { value: 'series', label: 'Series' },
+          ]}
+          className="text-[12px] px-2 py-1.5"
+        />
         <input
           value={tmdbSearch}
           onChange={(e) => setTmdbSearch(e.target.value)}

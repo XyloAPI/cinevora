@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center mb-4">
-              <img src="/Cinevora.avif" alt="Cinevora" className="h-8" />
+              <img src="/Cinevora.avif" alt="Cinevora" draggable={false} className="h-8 select-none" />
             </Link>
             <p className="text-sm text-white/30 leading-relaxed max-w-xs">
               Streaming film dan serial TV terbaru dengan subtitle Indonesia. Kualitas HD, gratis.

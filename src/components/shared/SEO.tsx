@@ -108,6 +108,7 @@ export default function SEO({ title, description, image, url, movie }: SEOProps)
       <meta name="title" content={fullTitle} />
       <meta name="description" content={desc} />
       <meta name="keywords" content={keywords} />
+      <meta name="referrer" content="no-referrer" />
       <link rel="canonical" href={canonicalUrl} />
       <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 

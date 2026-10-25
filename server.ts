@@ -6,6 +6,7 @@ import crypto from 'crypto'
 import { Readable } from 'stream'
 import { resolveEpisodeSource, sanitizeFilename } from './src/lib/streamUrls'
 import { computeSubtitleEtag, etagMatches } from './src/lib/subtitleCache'
+import { ensureVtt, stripAssTags } from './src/lib/subtitleFormat'
 
 dotenv.config()
 
@@ -38,6 +39,21 @@ app.get('/api/tmdb/search/movie', async (req: any, res: any) => {
   try {
     const { query, page = 1 } = req.query
     const url = `${TMDB_BASE}/search/movie?query=${encodeURIComponent(query as string)}&page=${page}&language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+app.get('/api/tmdb/search/tv', async (req: any, res: any) => {
+  try {
+    const { query, page = 1 } = req.query
+    const url = `${TMDB_BASE}/search/tv?query=${encodeURIComponent(query as string)}&page=${page}&language=id-ID`
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
     })
@@ -112,6 +128,80 @@ app.get('/api/tmdb/movie/:id/images', async (req: any, res: any) => {
   try {
     const { id } = req.params
     const url = `${TMDB_BASE}/movie/${id}/images?include_image_logos=true`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+app.get('/api/tmdb/tv/:id', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const url = `${TMDB_BASE}/tv/${id}?language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    let data = await response.json()
+
+    if (!data.overview || data.overview.trim() === '') {
+      const enUrl = `${TMDB_BASE}/tv/${id}?language=en-US`
+      const enResponse = await fetch(enUrl, {
+        headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+      })
+      if (enResponse.ok) {
+        const enData = await enResponse.json()
+        data.overview = enData.overview
+        if (!data.tagline && enData.tagline) {
+          data.tagline = enData.tagline
+        }
+      }
+    }
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+app.get('/api/tmdb/tv/:id/credits', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const url = `${TMDB_BASE}/tv/${id}/credits?language=id-ID`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+app.get('/api/tmdb/tv/:id/videos', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const url = `${TMDB_BASE}/tv/${id}/videos`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
+    })
+    if (!response.ok) throw new Error(`TMDB ${response.status}`)
+    const data = await response.json()
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+app.get('/api/tmdb/tv/:id/images', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const url = `${TMDB_BASE}/tv/${id}/images?include_image_logos=true`
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${TMDB_TOKEN}` }
     })
@@ -301,7 +391,9 @@ app.get('/api/subtitle', async (req: any, res: any) => {
     if (!upstream.ok) {
       return res.status(502).json({ error: `Upstream responded ${upstream.status}` })
     }
-    const text = await upstream.text()
+    const isSrt = row.url.toLowerCase().split(/[?#]/)[0].endsWith('.srt')
+    const raw = await upstream.text()
+    const text = isSrt ? stripAssTags(raw) : ensureVtt(raw)
     const etag = computeSubtitleEtag({
       upstreamEtag: upstream.headers.get('etag'),
       content: text,
@@ -315,7 +407,6 @@ app.get('/api/subtitle', async (req: any, res: any) => {
       return res.status(304).end()
     }
 
-    const isSrt = row.url.toLowerCase().split('?')[0].endsWith('.srt')
     res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8')
     res.status(200).send(text)
   } catch (error) {

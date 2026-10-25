@@ -9,7 +9,7 @@ import MovieCast from './MovieCast'
 
 export default function MovieDetailPage() {
   const { slug = '' } = useParams<{ slug: string }>()
-  const { data: movie } = useMovieBySlug(slug)
+  const { data: movie, isLoading } = useMovieBySlug(slug)
   const { data: related = [] } = useRelatedMovies(movie ?? null)
   const [logo, setLogo] = useState<string | undefined>(movie?.logoUrl)
   const [cast, setCast] = useState<{ id: number; name: string; character: string; photo: string | undefined }[]>([])
@@ -46,6 +46,14 @@ export default function MovieDetailPage() {
       })
       .catch(() => {})
   }, [movie?.tmdbId])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cinema-950 flex items-center justify-center pt-14">
+        <div className="w-8 h-8 border-2 border-cinema-red border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   if (!movie) {
     return (

@@ -14,11 +14,6 @@ export function computeSubtitleEtag(opts: {
   upstreamEtag?: string | null
   content: string
 }): string {
-  const upstream = (opts.upstreamEtag ?? '').trim()
-  if (upstream) {
-    const normalized = upstream.replace(/^W\//i, '')
-    return normalized.startsWith('"') ? normalized : `"${normalized}"`
-  }
   return `"${hashString(opts.content)}"`
 }
 

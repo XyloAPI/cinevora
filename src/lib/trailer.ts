@@ -6,14 +6,17 @@ const YOUTUBE_EMBED_BASE = 'https://www.youtube.com/embed/'
 const YOUTUBE_EMBED_PARAMS =
   '?autoplay=1&controls=0&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&fs=1'
 
-const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.m4v', '.mov', '.ogv', '.mkv']
-
 function extractYoutubeId(url: string): string | null {
   const trimmed = url.trim()
   if (!trimmed) return null
 
   try {
-    const parsed = new URL(trimmed)
+    const normalized = trimmed.startsWith('//')
+      ? `https:${trimmed}`
+      : /^[a-z][a-z0-9+.-]*:/i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`
+    const parsed = new URL(normalized)
     const host = parsed.hostname.replace(/^www\./, '').toLowerCase()
 
     if (host === 'youtu.be') {
@@ -44,8 +47,18 @@ export function isDirectVideoUrl(url: string | null | undefined): boolean {
   if (!trimmed) return false
   if (extractYoutubeId(trimmed)) return false
 
-  const path = trimmed.split(/[?#]/)[0].toLowerCase()
-  return VIDEO_EXTENSIONS.some((ext) => path.endsWith(ext))
+  try {
+    const normalized = trimmed.startsWith('//')
+      ? `https:${trimmed}`
+      : /^[a-z][a-z0-9+.-]*:/i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`
+    const parsed = new URL(normalized)
+    const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    return isHttp && Boolean(parsed.hostname)
+  } catch {
+    return trimmed.startsWith('/')
+  }
 }
 
 export function getTrailerSource(url: string | null | undefined): TrailerSource | null {

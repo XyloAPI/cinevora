@@ -88,10 +88,6 @@ export default function GlassPlayButton({
         {/* Bright rim catching the light */}
         <span className="pointer-events-none absolute inset-0 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.2)]" />
 
-        {/* Liquid shimmer - a thin ring of light travelling around the rim,
-            masked so the refraction in the middle stays visible */}
-        <span className="pointer-events-none absolute inset-0 rounded-full opacity-45 transition-opacity duration-200 ease-out group-hover:opacity-100 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(255,255,255,0.5),rgba(255,255,255,0.03)_38%,rgba(255,255,255,0.34)_68%,rgba(255,255,255,0.5))] [mask-image:radial-gradient(circle,transparent_34%,black_58%,transparent_76%)] animate-[spin_5s_linear_infinite]" />
-
         <span className="relative text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
           {playing ? (
             <IconPlayerPauseFilled size={iconSize} />

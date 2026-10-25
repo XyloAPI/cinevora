@@ -8,6 +8,15 @@ import '@vidstack/react/player/styles/default/theme.css'
 import '@vidstack/react/player/styles/default/layouts/video.css'
 import './styles/globals.css'
 
+// Prevent native image dragging globally so gestures/dragging are only used for scrolling
+if (typeof window !== 'undefined') {
+  window.addEventListener('dragstart', (e) => {
+    if (e.target instanceof HTMLImageElement || (e.target as HTMLElement)?.closest?.('img')) {
+      e.preventDefault()
+    }
+  })
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

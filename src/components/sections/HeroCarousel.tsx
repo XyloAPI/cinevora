@@ -66,7 +66,8 @@ export default function HeroCarousel() {
                 src={movie.backdrop}
                 alt=""
                 fetchPriority={i === 0 ? 'high' : 'auto'}
-                className="w-full h-full object-cover"
+                draggable={false}
+                className="w-full h-full object-cover select-none pointer-events-none"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-cinema-950 via-cinema-950/70 to-cinema-950/10" />
               <div className="absolute inset-0 bg-gradient-to-r from-cinema-950/90 via-cinema-950/50 to-transparent" />
@@ -93,7 +94,14 @@ export default function HeroCarousel() {
 
                   {logoUrl ? (
                     <div className="h-12 sm:h-16 lg:h-20 xl:h-24 mb-3 flex items-center">
-                      <img src={logoUrl} alt={movie.title} fetchPriority="high" className="max-h-full max-w-[400px] w-auto object-contain" style={{ filter: 'brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }} />
+                      <img
+                        src={logoUrl}
+                        alt={movie.title}
+                        fetchPriority="high"
+                        draggable={false}
+                        className="max-h-full max-w-[400px] w-auto object-contain select-none"
+                        style={{ filter: 'brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}
+                      />
                     </div>
                   ) : (
                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] mb-3">

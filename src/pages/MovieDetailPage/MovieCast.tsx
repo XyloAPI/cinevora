@@ -19,6 +19,7 @@ export default function MovieCast({ cast }: MovieCastProps) {
 
   function handleMouseDown(e: React.MouseEvent) {
     if (!scrollRef.current) return
+    e.preventDefault()
     setIsDragging(true)
     dragStart.current = { x: e.pageX, scroll: scrollRef.current.scrollLeft }
   }
@@ -47,21 +48,29 @@ export default function MovieCast({ cast }: MovieCastProps) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onDragStart={(e) => e.preventDefault()}
+        style={{ scrollBehavior: isDragging ? 'auto' : 'smooth' }}
         className="flex gap-4 sm:gap-6 overflow-x-auto cursor-grab active:cursor-grabbing select-none scroll-hidden"
       >
         {cast.map((c) => (
-          <div key={c.id} className="flex flex-col items-center text-center shrink-0 w-24 sm:w-28">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-cinema-800 border-2 border-white/[0.06] mb-2">
+          <div key={c.id} className="flex flex-col items-center text-center shrink-0 w-24 sm:w-28 select-none">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-cinema-800 border-2 border-white/[0.06] mb-2 pointer-events-none select-none">
               {c.photo ? (
-                <img src={c.photo} alt={c.name} loading="lazy" className="w-full h-full object-cover" />
+                <img
+                  src={c.photo}
+                  alt={c.name}
+                  loading="lazy"
+                  draggable={false}
+                  className="w-full h-full object-cover pointer-events-none select-none"
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/20 text-lg font-bold">
+                <div className="w-full h-full flex items-center justify-center text-white/20 text-lg font-bold select-none">
                   {c.name ? c.name.charAt(0) : ''}
                 </div>
               )}
             </div>
-            <p className="text-[12px] font-medium leading-tight truncate w-full">{c.name}</p>
-            <p className="text-[10px] text-white/30 truncate w-full">{c.character}</p>
+            <p className="text-[12px] font-medium leading-tight truncate w-full select-none">{c.name}</p>
+            <p className="text-[10px] text-white/30 truncate w-full select-none">{c.character}</p>
           </div>
         ))}
       </div>

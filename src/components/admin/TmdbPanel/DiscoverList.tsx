@@ -1,4 +1,5 @@
 import { IconTrendingUp } from '@tabler/icons-react'
+import Select from '@/components/ui/select'
 import type { TmdbMovieResult } from '@/types'
 
 interface DiscoverListProps {
@@ -31,28 +32,32 @@ export default function DiscoverList({
           <IconTrendingUp size={12} /> Discover List
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <select
+          <Select
             value={tmdbCategory}
-            onChange={(e) => setTmdbCategory(e.target.value as any)}
-            className="bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none"
-          >
-            <option value="trending">Trending</option>
-            <option value="now_playing">Now Playing</option>
-            <option value="popular">Popular</option>
-            <option value="top_rated">Top Rated</option>
-          </select>
-          <select
+            onChange={(val) => setTmdbCategory(val as DiscoverListProps['tmdbCategory'])}
+            options={[
+              { value: 'trending', label: 'Trending' },
+              { value: 'now_playing', label: 'Now Playing' },
+              { value: 'popular', label: 'Popular' },
+              { value: 'top_rated', label: 'Top Rated' },
+            ]}
+            className="text-[11px] px-2 py-1"
+            menuClassName="text-[11px]"
+          />
+          <Select
             value={tmdbRegion}
-            onChange={(e) => setTmdbRegion(e.target.value)}
-            className="bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none"
-          >
-            <option value="">Global</option>
-            <option value="ID">Indonesia</option>
-            <option value="US">United States</option>
-            <option value="KR">South Korea</option>
-            <option value="JP">Japan</option>
-            <option value="GB">United Kingdom</option>
-          </select>
+            onChange={setTmdbRegion}
+            options={[
+              { value: '', label: 'Global' },
+              { value: 'ID', label: 'Indonesia' },
+              { value: 'US', label: 'United States' },
+              { value: 'KR', label: 'South Korea' },
+              { value: 'JP', label: 'Japan' },
+              { value: 'GB', label: 'United Kingdom' },
+            ]}
+            className="text-[11px] px-2 py-1"
+            menuClassName="text-[11px]"
+          />
         </div>
       </div>
 

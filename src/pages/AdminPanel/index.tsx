@@ -46,7 +46,18 @@ export default function AdminPanel() {
   const [localMovies, setLocalMovies] = useState<Movie[]>([])
   const [editingMovie, setEditingMovie] = useState<Partial<Movie> | null>(null)
   const [jsonView, setJsonView] = useState(false)
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(() => Math.max(0, Number(searchParams.get('page')) || 0))
+
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        if (page > 0) prev.set('page', String(page))
+        else prev.delete('page')
+        return prev
+      },
+      { replace: true }
+    )
+  }, [page, setSearchParams])
 
   const { data: moviesData, isLoading, refetch } = useAllMovies()
   const { data: genresData } = useGenresHook()
@@ -90,7 +101,7 @@ export default function AdminPanel() {
   useEffect(() => {
     if (moviesData) {
       setLocalMovies(moviesData)
-      setPage(0)
+      setPage((p) => (p * PAGE_SIZE >= moviesData.length ? 0 : p))
     }
   }, [moviesData])
 

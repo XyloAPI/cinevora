@@ -35,7 +35,13 @@ export default function MovieHeroInfo({
   return (
     <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-end">
       <div className="absolute inset-0">
-        <img src={movie.backdrop} alt="" fetchPriority="high" className="w-full h-full object-cover" />
+        <img
+          src={movie.backdrop}
+          alt=""
+          fetchPriority="high"
+          draggable={false}
+          className="w-full h-full object-cover select-none pointer-events-none"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-cinema-950 via-cinema-950/80 to-cinema-950/20" />
         <div
           className="absolute inset-0"
@@ -61,7 +67,8 @@ export default function MovieHeroInfo({
               src={movie.poster}
               alt={movie.title}
               fetchPriority="high"
-              className="w-full aspect-[2/3] rounded-xl object-cover shadow-2xl shadow-black/50"
+              draggable={false}
+              className="w-full aspect-[2/3] rounded-xl object-cover shadow-2xl shadow-black/50 select-none"
             />
           </div>
 
@@ -80,7 +87,8 @@ export default function MovieHeroInfo({
                   src={logo}
                   alt={movie.title}
                   fetchPriority="high"
-                  className="max-h-full max-w-[400px] w-auto object-contain"
+                  draggable={false}
+                  className="max-h-full max-w-[400px] w-auto object-contain select-none"
                   style={{ filter: 'brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}
                 />
               </div>
@@ -170,7 +178,8 @@ export default function MovieHeroInfo({
                       src={c.logoUrl!}
                       alt={c.name}
                       loading="lazy"
-                      className="max-h-6 max-w-[100px] object-contain"
+                      draggable={false}
+                      className="max-h-6 max-w-[100px] object-contain select-none"
                       style={{ filter: 'brightness(0) invert(0.7)' }}
                     />
                   </div>

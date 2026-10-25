@@ -61,7 +61,7 @@ export default function Navbar() {
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center shrink-0">
-            <img src="/Cinevora.avif" alt="Cinevora" className="h-7" />
+            <img src="/Cinevora.avif" alt="Cinevora" draggable={false} className="h-7 select-none" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
@@ -116,7 +116,7 @@ export default function Navbar() {
               <input ref={inputRef} type="text" placeholder="Search movies..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full bg-white/10 text-white text-[13px] px-3 py-1.5 rounded outline-none focus:ring-1 focus:ring-cinema-red/50 placeholder-white/20" />
+                className="w-full bg-white/10 text-white text-[13px] px-3 py-1.5 rounded outline-none border border-white/[0.08] focus:border-white/25 placeholder-white/30 transition-colors" />
             </div>
             <button onClick={handleSearchClick}
               className="flex items-center p-1.5 text-white/40 hover:text-white transition-colors rounded hover:bg-white/[0.04]">
