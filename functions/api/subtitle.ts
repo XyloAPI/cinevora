@@ -11,8 +11,8 @@ function toTursoArgs(params: any[]): any[] {
   })
 }
 
-import { computeSubtitleEtag, etagMatches } from '../../../src/lib/subtitleCache'
-import { ensureVtt, stripAssTags } from '../../../src/lib/subtitleFormat'
+import { computeSubtitleEtag, etagMatches } from '../../src/lib/subtitleCache'
+import { ensureVtt, stripAssTags } from '../../src/lib/subtitleFormat'
 
 async function tursoQuery(env: any, sql: string, params: any[]): Promise<any[]> {
   const httpUrl = (env.TURSO_DATABASE_URL || '').replace('libsql://', 'https://')
