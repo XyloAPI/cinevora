@@ -3,8 +3,9 @@ import { useParams, Link } from 'react-router-dom'
 import { useMovieBySlug, useSubtitle } from '@/hooks/useMovies'
 import { IconPlayerPlayFilled, IconDownload } from '@tabler/icons-react'
 import SEO from '@/components/shared/SEO'
-import { VideoPlayer } from '@/components/player'
+import { VideoPlayer, EmbedPlayer } from '@/components/player'
 import { buildDownloadUrl } from '@/lib/streamEndpoints'
+import { isEmbedUrl } from '@/lib/embed'
 import { playbackKey } from '@/lib/playbackPosition'
 import { resolveActiveSource, resolveEpisodeSource } from '@/lib/streamUrls'
 import WatchHeader from './WatchHeader'
@@ -124,17 +125,21 @@ export default function WatchPage() {
           )}
 
           {currentStreamUrl ? (
-            <VideoPlayer
-              key={currentStreamUrl}
-              src={currentStreamUrl}
-              title={movie.title}
-              movieId={movie.id}
-              season={subtitleSeason}
-              episode={subtitleEpisode}
-              storageKey={playbackKey(slug, subtitleSeason, subtitleEpisode)}
-              subtitle={subtitle}
-              onError={() => setStreamError(true)}
-            />
+            isEmbedUrl(currentStreamUrl) ? (
+              <EmbedPlayer src={currentStreamUrl} title={movie.title} />
+            ) : (
+              <VideoPlayer
+                key={currentStreamUrl}
+                src={currentStreamUrl}
+                title={movie.title}
+                movieId={movie.id}
+                season={subtitleSeason}
+                episode={subtitleEpisode}
+                storageKey={playbackKey(slug, subtitleSeason, subtitleEpisode)}
+                subtitle={subtitle}
+                onError={() => setStreamError(true)}
+              />
+            )
           ) : (
             <div className="relative w-full aspect-video flex flex-col items-center justify-center gap-4 bg-cinema-900 rounded-lg">
               <IconPlayerPlayFilled size={48} className="text-white/20 animate-pulse" />
