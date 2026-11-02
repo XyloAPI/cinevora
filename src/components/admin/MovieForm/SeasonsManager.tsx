@@ -6,6 +6,7 @@ interface Episode {
   url: string
   url2?: string
   sub?: string
+  download?: string
 }
 
 interface Season {
@@ -215,6 +216,20 @@ export default function SeasonsManager({
                       const val = e.target.value
                       const updated = [...seasonsList]
                       updated[activeSeasonIndex].episodes[epIdx].url2 = val
+                      setSeasonsList(updated)
+                    }}
+                    className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
+                  />
+
+                  {/* Download Input */}
+                  <input
+                    type="text"
+                    value={ep.download || ''}
+                    placeholder="Download URL (opsional)..."
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const updated = [...seasonsList]
+                      updated[activeSeasonIndex].episodes[epIdx].download = val
                       setSeasonsList(updated)
                     }}
                     className="w-full bg-cinema-800 text-white text-[11px] px-2 py-1 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"

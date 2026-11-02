@@ -1,4 +1,5 @@
 import { resolveEpisodeSource, sanitizeFilename } from '../../../src/lib/streamUrls'
+import { isEmbedUrl } from '../../../src/lib/embed'
 
 function toTursoArgs(params: any[]): any[] {
   return params.map((val: any) => {
@@ -61,13 +62,19 @@ export async function onRequest(context: any) {
 
     const rows = await tursoQuery(
       env,
-      'SELECT id, title, stream_url, stream_url_2 FROM movies WHERE id = ?',
+      'SELECT id, title, stream_url, stream_url_2, download_url FROM movies WHERE id = ?',
       [movieId]
     )
     const movie = rows[0]
     if (!movie) return jsonError('Movie not found', 404)
 
     const source = resolveEpisodeSource({
+      streamUrl: movie.download_url,
+      streamUrl2: null,
+      season,
+      episode,
+      slot: 1,
+    }) || resolveEpisodeSource({
       streamUrl: movie.stream_url,
       streamUrl2: movie.stream_url_2,
       season,
@@ -75,6 +82,7 @@ export async function onRequest(context: any) {
       slot,
     })
     if (!source) return jsonError('No stream URL for this episode', 404)
+    if (isEmbedUrl(source)) return jsonError('No download URL for this title', 404)
 
     const range = request.headers.get('Range')
     const upstream = await fetch(source, { headers: range ? { Range: range } : {} })

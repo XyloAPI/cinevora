@@ -31,10 +31,11 @@ export default function MovieForm({
   const [taglineText, setTaglineText] = useState('')
   const [streamUrlText, setStreamUrlText] = useState('')
   const [streamUrl2Text, setStreamUrl2Text] = useState('')
+  const [downloadUrlText, setDownloadUrlText] = useState('')
   const [subtitleUrl, setSubtitleUrl] = useState('')
   const [subtitleLang, setSubtitleLang] = useState<string>('id')
   const [mediaType, setMediaType] = useState<'movie' | 'series'>('movie')
-  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string; url2?: string; sub?: string }> }>>([])
+  const [seasonsList, setSeasonsList] = useState<Array<{ season: number; episodes: Array<{ episode: number; url: string; url2?: string; sub?: string; download?: string }> }>>([])
   const [activeSeasonIndex, setActiveSeasonIndex] = useState<number>(0)
   const [translatingSynopsis, setTranslatingSynopsis] = useState(false)
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
@@ -50,6 +51,7 @@ export default function MovieForm({
     setTaglineText(editingMovie.tagline || '')
     setStreamUrlText(editingMovie.streamUrl || '')
     setStreamUrl2Text(editingMovie.streamUrl2 || '')
+    setDownloadUrlText(editingMovie.downloadUrl || '')
     setSynopsisTranslated(false)
     setTaglineTranslated(false)
     originalSynopsisRef.current = editingMovie.synopsis || ''
@@ -81,6 +83,27 @@ export default function MovieForm({
         ])
       }
       setActiveSeasonIndex(0)
+
+      let downloads: any[] = []
+      try {
+        if (editingMovie.downloadUrl && editingMovie.downloadUrl.trim().startsWith('[')) {
+          downloads = JSON.parse(editingMovie.downloadUrl)
+        }
+      } catch (e) {
+        // ignore error
+      }
+      if (Array.isArray(downloads) && downloads.length > 0) {
+        setSeasonsList((current) =>
+          current.map((season) => ({
+            ...season,
+            episodes: season.episodes.map((episode) => {
+              const match = downloads.find((d) => d.season === season.season)
+              const hit = match?.episodes?.find((e: any) => e.episode === episode.episode)
+              return hit?.url ? { ...episode, download: hit.url } : episode
+            }),
+          }))
+        )
+      }
     } else {
       setSeasonsList([])
     }
@@ -129,17 +152,28 @@ export default function MovieForm({
 
     let finalStreamUrl = ''
     let finalStreamUrl2 = ''
+    let finalDownloadUrl = ''
     let totalSeasons: number | null = null
     let totalEpisodes: number | null = null
 
     if (mediaType === 'series') {
       finalStreamUrl = JSON.stringify(seasonsList)
       finalStreamUrl2 = ''
+      const downloadTree = seasonsList.map((season) => ({
+        season: season.season,
+        episodes: season.episodes
+          .filter((episode) => (episode.download || '').trim())
+          .map((episode) => ({ episode: episode.episode, url: episode.download!.trim() })),
+      }))
+      finalDownloadUrl = downloadTree.some((season) => season.episodes.length > 0)
+        ? JSON.stringify(downloadTree)
+        : ''
       totalSeasons = seasonsList.length
       totalEpisodes = seasonsList.reduce((acc, s) => acc + s.episodes.length, 0)
     } else {
       finalStreamUrl = rawStreamUrl ? normalizeDirectUrl(rawStreamUrl) : ''
       finalStreamUrl2 = rawStreamUrl2 ? normalizeDirectUrl(rawStreamUrl2) : ''
+      finalDownloadUrl = downloadUrlText.trim() ? normalizeDirectUrl(downloadUrlText.trim()) : ''
     }
 
     const data = {
@@ -176,6 +210,7 @@ export default function MovieForm({
       trailer_url: (form.get('trailerUrl') as string) || null,
       stream_url: finalStreamUrl || null,
       stream_url_2: finalStreamUrl2 || null,
+      download_url: finalDownloadUrl || null,
       production_companies: editingMovie.productionCompanies ? JSON.stringify(editingMovie.productionCompanies) : null,
       status: editingMovie.status || null,
       provider_id: Number(form.get('providerId')) || null,
@@ -386,6 +421,22 @@ export default function MovieForm({
                 onBlur={() => {
                   if (streamUrl2Text.trim()) {
                     setStreamUrl2Text(normalizeDirectUrl(streamUrl2Text))
+                  }
+                }}
+                className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-[11px] text-white/40">
+              Download URL (opsional, untuk tombol Download)
+              <input
+                name="downloadUrl"
+                value={downloadUrlText}
+                placeholder="https://cdn.example.com/film.mp4"
+                onChange={(e) => setDownloadUrlText(e.target.value)}
+                onBlur={() => {
+                  if (downloadUrlText.trim()) {
+                    setDownloadUrlText(normalizeDirectUrl(downloadUrlText))
                   }
                 }}
                 className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"

@@ -2,7 +2,7 @@
 > moviestream@1.0.0 server
 > tsx server.ts
 
-◇ injected env (10) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (10) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
 Backend server running on http://localhost:3001
 TMDB API proxy: http://localhost:3001/api/tmdb/...
 Database proxy: http://localhost:3001/api/db/query

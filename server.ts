@@ -7,6 +7,7 @@ import { Readable } from 'stream'
 import { resolveEpisodeSource, sanitizeFilename } from './src/lib/streamUrls'
 import { computeSubtitleEtag, etagMatches } from './src/lib/subtitleCache'
 import { ensureVtt } from './src/lib/subtitleFormat'
+import { isEmbedUrl } from './src/lib/embed'
 
 dotenv.config()
 
@@ -338,11 +339,17 @@ app.get('/api/stream/download', async (req: any, res: any) => {
     const episode = Number(readParam(req.query.episode) || 0)
     if (!movieId) return res.status(400).json({ error: 'movieId is required' })
 
-    const rows = await tursoQuery('SELECT id, title, stream_url, stream_url_2 FROM movies WHERE id = ?', [movieId])
+    const rows = await tursoQuery('SELECT id, title, stream_url, stream_url_2, download_url FROM movies WHERE id = ?', [movieId])
     const movie = rows[0]
     if (!movie) return res.status(404).json({ error: 'Movie not found' })
 
     const url = resolveEpisodeSource({
+      streamUrl: movie.download_url,
+      streamUrl2: null,
+      season,
+      episode,
+      slot: 1,
+    }) || resolveEpisodeSource({
       streamUrl: movie.stream_url,
       streamUrl2: movie.stream_url_2,
       season,
@@ -350,6 +357,7 @@ app.get('/api/stream/download', async (req: any, res: any) => {
       slot,
     })
     if (!url) return res.status(404).json({ error: 'No stream URL for this episode' })
+    if (isEmbedUrl(url)) return res.status(404).json({ error: 'No download URL for this title' })
 
     const range = req.headers.range
     const upstream = await fetch(url, { headers: range ? { Range: range } : {} })
