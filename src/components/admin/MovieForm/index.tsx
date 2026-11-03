@@ -388,6 +388,12 @@ export default function MovieForm({
               { value: '119', label: 'Prime Video' },
               { value: '1899', label: 'HBO Max / HBO Go' },
               { value: '350', label: 'Apple TV+' },
+              { value: '581', label: 'iQIYI' },
+              { value: '283', label: 'Crunchyroll' },
+              { value: '623', label: 'WeTV' },
+              { value: '489', label: 'Vidio' },
+              { value: '576', label: 'KlikFilm' },
+              { value: '5756', label: 'Vision+' },
             ]}
             className="text-[12px] px-2 py-1.5 mt-0.5 w-full"
           />

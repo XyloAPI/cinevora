@@ -17,6 +17,35 @@ import PlatformsRow from '@/components/sections/PlatformsRow'
 import SEO from '@/components/shared/SEO'
 import { MovieRowSkeleton, MovieGridSkeleton } from '@/components/shared/Skeleton'
 
+const platformLogoSizes: Record<string, { width: number; height: number }> = {
+  netflix: { width: 65, height: 32 },
+  hotstar: { width: 80, height: 32 },
+  viu: { width: 45, height: 32 },
+  prime: { width: 120, height: 32 },
+  hbomax: { width: 100, height: 32 },
+  appletv: { width: 45, height: 32 },
+  iqiyi: { width: 50, height: 32 },
+  crunchyroll: { width: 130, height: 32 },
+  wetv: { width: 80, height: 32 },
+  vidio: { width: 80, height: 57 },
+  klikfilm: { width: 89, height: 32 },
+  visionplus: { width: 86, height: 24 },
+}
+
+function PlatformLogo({ file, name }: { file: string; name: string }) {
+  const size = platformLogoSizes[file]
+
+  return (
+    <img
+      src={`/assets/platforms/${file}.svg`}
+      alt={name}
+      width={size.width}
+      height={size.height}
+      className="shrink-0 object-contain object-left"
+    />
+  )
+}
+
 export default function HomePage() {
   const { data: series = [], isLoading: seriesLoad } = useSeries()
   const { data: moviesOnly = [], isLoading: moviesLoad } = useLatestMovies()
@@ -37,7 +66,12 @@ export default function HomePage() {
   const { data: primeTrending = [], isLoading: primeLoad } = usePlatformMoviesFromDb(119)
   const { data: hboTrending = [], isLoading: hboLoad } = usePlatformMoviesFromDb(1899)
   const { data: appleTrending = [], isLoading: appleLoad } = usePlatformMoviesFromDb(350)
-
+  const { data: iqiyiTrending = [], isLoading: iqiyiLoad } = usePlatformMoviesFromDb(581, 'US')
+  const { data: crunchyrollTrending = [], isLoading: crunchyrollLoad } = usePlatformMoviesFromDb(283)
+  const { data: wetvTrending = [], isLoading: wetvLoad } = usePlatformMoviesFromDb(623)
+  const { data: vidioTrending = [], isLoading: vidioLoad } = usePlatformMoviesFromDb(489)
+  const { data: klikfilmTrending = [], isLoading: klikfilmLoad } = usePlatformMoviesFromDb(576)
+  const { data: visionplusTrending = [], isLoading: visionplusLoad } = usePlatformMoviesFromDb(5756)
   return (
     <>
       <SEO />
@@ -65,7 +99,7 @@ export default function HomePage() {
             id="netflix-row"
             title={
               <span className="flex items-center gap-2">
-                Populer di <span className="text-[#E50914] font-black uppercase tracking-wider">Netflix</span>
+                Populer di <PlatformLogo file="netflix" name="Netflix" />
               </span>
             }
             movies={netflixTrending}
@@ -82,7 +116,7 @@ export default function HomePage() {
             id="disney-row"
             title={
               <span className="flex items-center gap-2">
-                Populer di <span className="bg-gradient-to-r from-[#0063e5] to-[#30b9e3] bg-clip-text text-transparent font-extrabold">Disney+</span>
+                Populer di <PlatformLogo file="hotstar" name="Disney+ Hotstar" />
               </span>
             }
             movies={disneyTrending}
@@ -99,7 +133,7 @@ export default function HomePage() {
             id="viu-row"
             title={
               <span className="flex items-center gap-2">
-                Drakor & Show Populer di <span className="text-[#FFC20E] font-extrabold uppercase tracking-wide">Viu</span>
+                Drakor & Show Populer di <PlatformLogo file="viu" name="Viu" />
               </span>
             }
             movies={viuTrending}
@@ -116,7 +150,7 @@ export default function HomePage() {
             id="prime-row"
             title={
               <span className="flex items-center gap-2">
-                Populer di <span className="text-[#00A8E1] font-black uppercase tracking-wider">Prime Video</span>
+                Populer di <PlatformLogo file="prime" name="Prime Video" />
               </span>
             }
             movies={primeTrending}
@@ -133,7 +167,7 @@ export default function HomePage() {
             id="hbo-row"
             title={
               <span className="flex items-center gap-2">
-                Populer di <span className="bg-gradient-to-r from-[#9933FF] to-[#D500F9] bg-clip-text text-transparent font-extrabold uppercase tracking-wide">HBO Max</span>
+                Populer di <PlatformLogo file="hbomax" name="HBO Max" />
               </span>
             }
             movies={hboTrending}
@@ -150,10 +184,112 @@ export default function HomePage() {
             id="apple-row"
             title={
               <span className="flex items-center gap-2">
-                Populer di <span className="text-white font-extrabold tracking-tight">Apple TV+</span>
+                Populer di <PlatformLogo file="appletv" name="Apple TV+" />
               </span>
             }
             movies={appleTrending}
+          />
+        )
+      )}
+
+      {/* iQIYI Row */}
+      {iqiyiLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        iqiyiTrending.length > 0 && (
+          <MovieRow
+            id="iqiyi-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <PlatformLogo file="iqiyi" name="iQIYI" />
+              </span>
+            }
+            movies={iqiyiTrending}
+          />
+        )
+      )}
+
+      {/* Crunchyroll Row */}
+      {crunchyrollLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        crunchyrollTrending.length > 0 && (
+          <MovieRow
+            id="crunchyroll-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <PlatformLogo file="crunchyroll" name="Crunchyroll" />
+              </span>
+            }
+            movies={crunchyrollTrending}
+          />
+        )
+      )}
+
+      {/* WeTV Row */}
+      {wetvLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        wetvTrending.length > 0 && (
+          <MovieRow
+            id="wetv-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <PlatformLogo file="wetv" name="WeTV" />
+              </span>
+            }
+            movies={wetvTrending}
+          />
+        )
+      )}
+
+      {/* Vidio Row */}
+      {vidioLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        vidioTrending.length > 0 && (
+          <MovieRow
+            id="vidio-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <PlatformLogo file="vidio" name="Vidio" />
+              </span>
+            }
+            movies={vidioTrending}
+          />
+        )
+      )}
+
+      {/* KlikFilm Row */}
+      {klikfilmLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        klikfilmTrending.length > 0 && (
+          <MovieRow
+            id="klikfilm-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <PlatformLogo file="klikfilm" name="KlikFilm" />
+              </span>
+            }
+            movies={klikfilmTrending}
+          />
+        )
+      )}
+
+      {/* Vision+ Row */}
+      {visionplusLoad ? (
+        <MovieRowSkeleton />
+      ) : (
+        visionplusTrending.length > 0 && (
+          <MovieRow
+            id="visionplus-row"
+            title={
+              <span className="flex items-center gap-2">
+                Populer di <PlatformLogo file="visionplus" name="Vision+" />
+              </span>
+            }
+            movies={visionplusTrending}
           />
         )
       )}

@@ -215,6 +215,11 @@ export function usePlatformMoviesFromDb(
             if (providerId === 119 && (hp.includes('primevideo.com') || hp.includes('amazon.com'))) return true
             if ((providerId === 1899 || providerId === 384) && (hp.includes('hbogo') || hp.includes('hbomax') || hp.includes('hbo.com') || hp.includes('max.com'))) return true
             if (providerId === 350 && hp.includes('apple.com')) return true
+            if (providerId === 581 && (hp.includes('iqiyi.com') || hp.includes('iq.com'))) return true
+            if (providerId === 283 && hp.includes('crunchyroll.com')) return true
+            if (providerId === 623 && (hp.includes('wetv.vip') || hp.includes('wetv.com'))) return true
+            if (providerId === 489 && hp.includes('vidio.com')) return true
+            if (providerId === 576 && hp.includes('klikfilm.')) return true
           }
 
           return false
