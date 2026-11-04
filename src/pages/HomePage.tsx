@@ -28,7 +28,7 @@ const platformLogoSizes: Record<string, { width: number; height: number }> = {
   crunchyroll: { width: 130, height: 32 },
   wetv: { width: 80, height: 32 },
   vidio: { width: 80, height: 57 },
-  klikfilm: { width: 89, height: 32 },
+  klikfilm: { width: 70, height: 32 },
   visionplus: { width: 86, height: 24 },
 }
 

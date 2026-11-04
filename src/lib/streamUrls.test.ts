@@ -30,6 +30,14 @@ describe('normalizeDirectUrl', () => {
     expect(normalizeDirectUrl('  https://cdn.x.com/a.mp4  ')).toBe('https://cdn.x.com/a.mp4')
   })
 
+  it('extracts and normalizes an iframe embed src', () => {
+    expect(
+      normalizeDirectUrl(
+        '<iframe src="https://vidara.to/e/XjezanS40TUq" width="640" height="360" frameborder="0" allowfullscreen></iframe>'
+      )
+    ).toBe('https://vidara.to/e/XjezanS40TUq')
+  })
+
   it('prepends https when scheme is missing', () => {
     expect(normalizeDirectUrl('cdn.x.com/a.mp4')).toBe('https://cdn.x.com/a.mp4')
   })

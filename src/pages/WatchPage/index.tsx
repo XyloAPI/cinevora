@@ -7,7 +7,7 @@ import { VideoPlayer, EmbedPlayer } from '@/components/player'
 import { buildDownloadUrl } from '@/lib/streamEndpoints'
 import { isEmbedUrl } from '@/lib/embed'
 import { playbackKey } from '@/lib/playbackPosition'
-import { resolveActiveSource, resolveEpisodeSource } from '@/lib/streamUrls'
+import { normalizeDirectUrl, resolveActiveSource, resolveEpisodeSource } from '@/lib/streamUrls'
 import WatchHeader from './WatchHeader'
 import EpisodeSelector from './EpisodeSelector'
 
@@ -95,8 +95,9 @@ export default function WatchPage() {
   })
 
   const hasServer2 = Boolean(mirror)
-  const currentStreamUrl =
+  const currentStreamUrl = normalizeDirectUrl(
     resolveActiveSource({ primary, mirror, preferMirror: activeServer === 'server2' }) || ''
+  )
 
   const subtitle = subtitleRow
     ? {

@@ -49,6 +49,9 @@ export default defineConfig({
     },
   },
   server: {
+    headers: {
+      'Permissions-Policy': 'fullscreen=*',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

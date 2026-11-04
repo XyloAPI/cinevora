@@ -6,6 +6,10 @@ describe('isEmbedUrl', () => {
     expect(isEmbedUrl('https://player.example.com/embed/abc.html')).toBe(true)
   })
 
+  it('detects Vidara embed urls', () => {
+    expect(isEmbedUrl('https://vidara.to/e/XjezanS40TUq')).toBe(true)
+  })
+
   it('detects an embed query marker', () => {
     expect(isEmbedUrl('https://example.com/watch?embed=1')).toBe(true)
   })

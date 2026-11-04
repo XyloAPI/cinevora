@@ -10,7 +10,7 @@ export function EmbedPlayer({ src, title }: EmbedPlayerProps) {
         src={src}
         title={title ?? 'Video player'}
         className="w-full h-full border-0"
-        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
         allowFullScreen
         scrolling="no"
         referrerPolicy="no-referrer"

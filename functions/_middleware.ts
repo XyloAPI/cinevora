@@ -11,6 +11,7 @@ export async function onRequest(context) {
   newHeaders.set('Access-Control-Allow-Origin', '*')
   newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   newHeaders.set('Access-Control-Allow-Headers', 'Content-Type')
+  newHeaders.set('Permissions-Policy', 'fullscreen=*')
 
   return new Response(response.body, {
     status: response.status,

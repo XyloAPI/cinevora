@@ -20,6 +20,18 @@ export function isEmbedUrl(url: string | null | undefined): boolean {
   const lowerPath = path.toLowerCase()
   const lowerQuery = query.toLowerCase()
 
+  try {
+    const { hostname, pathname } = new URL(trimmed)
+    if (
+      (hostname === 'vidara.to' || hostname.endsWith('.vidara.to')) &&
+      pathname.startsWith('/e/')
+    ) {
+      return true
+    }
+  } catch {
+    return false
+  }
+
   if (EMBED_MARKERS.some((marker) => lowerPath.includes(marker) || lowerQuery.includes(marker))) {
     return true
   }

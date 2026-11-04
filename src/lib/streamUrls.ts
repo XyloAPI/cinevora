@@ -14,7 +14,9 @@ const SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:/i
 const ILLEGAL_FILENAME_CHARS = /[<>:"/\\|?*\u0000-\u001f]/g
 
 export function normalizeDirectUrl(input: string): string {
-  const trimmed = (input ?? '').trim()
+  const raw = (input ?? '').trim()
+  const iframe = raw.match(/<iframe\b[^>]*\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>/i)
+  const trimmed = (iframe?.slice(1).find(Boolean) ?? raw).trim()
   if (!trimmed) return ''
   if (trimmed.startsWith('//')) return `https:${trimmed}`
   if (SCHEME_PATTERN.test(trimmed)) return trimmed

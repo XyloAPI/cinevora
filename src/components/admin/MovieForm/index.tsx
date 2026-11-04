@@ -157,7 +157,16 @@ export default function MovieForm({
     let totalEpisodes: number | null = null
 
     if (mediaType === 'series') {
-      finalStreamUrl = JSON.stringify(seasonsList)
+      finalStreamUrl = JSON.stringify(
+        seasonsList.map((season) => ({
+          ...season,
+          episodes: season.episodes.map((episode) => ({
+            ...episode,
+            url: normalizeDirectUrl(episode.url),
+            url2: episode.url2 ? normalizeDirectUrl(episode.url2) : episode.url2,
+          })),
+        }))
+      )
       finalStreamUrl2 = ''
       const downloadTree = seasonsList.map((season) => ({
         season: season.season,
