@@ -131,13 +131,46 @@ export default function AdminPanel() {
   }
 
   async function handleTmdbSearch() {
-    if (!tmdbSearch.trim()) return
+    const query = tmdbSearch.trim()
+    if (!query) return
+
     setTmdbSearching(true)
+    setTmdbResults([])
     try {
-      const res = await tmdb.searchMovies(tmdbSearch, tmdbType)
-      setTmdbResults(res.results || [])
-    } catch {
-      toast.error('Search failed')
+      if (/^\d+$/.test(query)) {
+        const tmdbId = Number(query)
+        if (!Number.isSafeInteger(tmdbId) || tmdbId <= 0) {
+          toast.error('Enter a valid TMDB ID')
+          return
+        }
+
+        const detail = await tmdb.getMovieDetail(tmdbId, tmdbType)
+        setTmdbResults([{
+          id: detail.id,
+          title: detail.title || detail.name || '',
+          original_title: detail.original_title || detail.title || detail.name || '',
+          overview: detail.overview || '',
+          release_date: detail.release_date || detail.first_air_date || '',
+          vote_average: detail.vote_average,
+          vote_count: detail.vote_count,
+          popularity: detail.popularity,
+          poster_path: detail.poster_path,
+          backdrop_path: detail.backdrop_path,
+          genre_ids: (detail.genres || []).map((genre) => genre.id),
+          original_language: detail.original_language,
+          adult: detail.adult,
+          video: false,
+          media_type: tmdbType === 'series' ? 'tv' : 'movie',
+          name: detail.name,
+          first_air_date: detail.first_air_date,
+        }])
+      } else {
+        const res = await tmdb.searchMovies(query, tmdbType)
+        setTmdbResults(res.results || [])
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
+      toast.error(message.includes('404') ? 'TMDB ID not found for the selected type' : 'Search failed')
     } finally {
       setTmdbSearching(false)
     }

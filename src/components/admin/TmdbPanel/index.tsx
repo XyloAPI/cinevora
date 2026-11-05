@@ -68,7 +68,7 @@ export default function TmdbPanel({
           value={tmdbSearch}
           onChange={(e) => setTmdbSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleTmdbSearch()}
-          placeholder={tmdbType === 'series' ? 'Search TMDB series...' : 'Search TMDB movies...'}
+          placeholder={tmdbType === 'series' ? 'Search series title or TMDB ID...' : 'Search movie title or TMDB ID...'}
           className="flex-1 bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none focus:border-cinema-red/50"
         />
         <button
