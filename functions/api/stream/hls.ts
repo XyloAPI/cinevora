@@ -55,9 +55,11 @@ export async function onRequest(context: any) {
       const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret.padEnd(32, '0').slice(0, 32)), 'AES-GCM', false, ['decrypt'])
       const raw = token.replace(/-/g, '+').replace(/_/g, '/')
       const padded = raw + '='.repeat((4 - (raw.length % 4)) % 4)
-      const buf = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0))
-      const iv = buf.slice(0, 12)
-      const ct = buf.slice(12)
+      const binary = atob(padded)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const iv = bytes.slice(0, 12)
+      const ct = bytes.slice(12)
       const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
       source = new TextDecoder().decode(pt)
     } else {
@@ -108,9 +110,12 @@ export async function onRequest(context: any) {
       const encrypt = async (plain: string) => {
         const iv = crypto.getRandomValues(new Uint8Array(12))
         const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain))
-        const buf = new Uint8Array(iv.byteLength + ct.byteLength)
-        buf.set(iv, 0); buf.set(new Uint8Array(ct), iv.byteLength)
-        return btoa(String.fromCharCode(...buf)).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '')
+        const bytes = new Uint8Array(iv.byteLength + ct.byteLength)
+        bytes.set(iv, 0)
+        bytes.set(new Uint8Array(ct), iv.byteLength)
+        let binary = ''
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
+        return btoa(binary).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '')
       }
       const matches = text.match(/(https?:)?\/\/vdohls\.com\/[^\s"']+/g) || []
       let out = text
