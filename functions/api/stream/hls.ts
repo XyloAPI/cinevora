@@ -48,43 +48,75 @@ export async function onRequest(context: any) {
 
   try {
     const url = new URL(request.url)
+    const kv = env.HLS_TOKENS
+    const origin = url.origin
+
+    // Token-based lookup (segment / nested playlist)
     const token = url.searchParams.get('t') || ''
-    let source = ''
-    if (token) {
-      const secret = env.HLS_PROXY_SECRET || 'cinevora-hls-secret'
-      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret.padEnd(32, '0').slice(0, 32)), 'AES-GCM', false, ['decrypt'])
-      const raw = token.replace(/-/g, '+').replace(/_/g, '/')
-      const padded = raw + '='.repeat((4 - (raw.length % 4)) % 4)
-      const binary = atob(padded)
-      const bytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-      const iv = bytes.slice(0, 12)
-      const ct = bytes.slice(12)
-      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
-      source = new TextDecoder().decode(pt)
-    } else {
-      const targetUrl = url.searchParams.get('url') || ''
-      source = targetUrl
-    }
-    if (!source) {
-      const movieId = url.searchParams.get('movieId') || ''
-      const slot = url.searchParams.get('slot') === '2' ? 2 : 1
-      const season = Number(url.searchParams.get('season') || 0)
-      const episode = Number(url.searchParams.get('episode') || 0)
-      if (!movieId) return jsonError('movieId or url is required', 400)
-      const rows = await tursoQuery(env, 'SELECT stream_url, stream_url_2 FROM movies WHERE id = ?', [movieId])
-      const movie = rows[0]
-      if (!movie) return jsonError('Movie not found', 404)
-      const resolved = resolveEpisodeSource({
-        streamUrl: movie.stream_url,
-        streamUrl2: movie.stream_url_2,
-        season,
-        episode,
-        slot,
+    if (token && kv) {
+      const upstream = await kv.get(token)
+      if (!upstream) return jsonError('Token expired', 404)
+      const range = request.headers.get('Range')
+      const res = await fetch(upstream, {
+        headers: {
+          Referer: 'https://fembed.co/',
+          'User-Agent': 'Mozilla/5.0',
+          ...(range ? { Range: range } : {}),
+        },
       })
-      if (!resolved) return jsonError('No stream URL', 404)
-      source = resolved
+      if (!res.ok || !res.body) return jsonError(`Upstream responded ${res.status}`, 502)
+      const contentType = res.headers.get('content-type') || ''
+      const isPlaylist = contentType.includes('mpegurl') || upstream.endsWith('.m3u8')
+
+      if (isPlaylist) {
+        const text = await res.text()
+        const matches = text.match(/(https?:)?\/\/vdohls\.com\/[^\s"']+/g) || []
+        let out = text
+        for (const m of matches) {
+          const absolute = m.startsWith('//') ? `https:${m}` : m
+          const t = crypto.randomUUID()
+          await kv.put(t, absolute, { expirationTtl: 3600 })
+          out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
+        }
+        const headers = new Headers()
+        headers.set('Content-Type', 'application/vnd.apple.mpegurl')
+        headers.set('Access-Control-Allow-Origin', '*')
+        return new Response(out, { status: 200, headers })
+      }
+
+      const headers = new Headers()
+      headers.set('Content-Type', contentType || 'application/octet-stream')
+      headers.set('Access-Control-Allow-Origin', '*')
+      const contentLength = res.headers.get('content-length')
+      const contentRange = res.headers.get('content-range')
+      const acceptRanges = res.headers.get('accept-ranges')
+      if (contentLength) headers.set('Content-Length', contentLength)
+      if (contentRange) headers.set('Content-Range', contentRange)
+      if (acceptRanges) headers.set('Accept-Ranges', acceptRanges)
+      return new Response(res.body, {
+        status: res.status === 206 ? 206 : 200,
+        headers,
+      })
     }
+
+    // Entry: resolve from DB
+    const movieId = url.searchParams.get('movieId') || ''
+    const slot = url.searchParams.get('slot') === '2' ? 2 : 1
+    const season = Number(url.searchParams.get('season') || 0)
+    const episode = Number(url.searchParams.get('episode') || 0)
+    if (!movieId) return jsonError('movieId or t is required', 400)
+
+    const rows = await tursoQuery(env, 'SELECT stream_url, stream_url_2 FROM movies WHERE id = ?', [movieId])
+    const movie = rows[0]
+    if (!movie) return jsonError('Movie not found', 404)
+    const source = resolveEpisodeSource({
+      streamUrl: movie.stream_url,
+      streamUrl2: movie.stream_url_2,
+      season,
+      episode,
+      slot,
+    })
+    if (!source) return jsonError('No stream URL', 404)
     if (!source.includes('vdohls.com')) return jsonError('Not an HLS source', 400)
 
     const range = request.headers.get('Range')
@@ -95,33 +127,19 @@ export async function onRequest(context: any) {
         ...(range ? { Range: range } : {}),
       },
     })
-    if (!upstream.ok || !upstream.body) {
-      return jsonError(`Upstream responded ${upstream.status}`, 502)
-    }
+    if (!upstream.ok || !upstream.body) return jsonError(`Upstream responded ${upstream.status}`, 502)
 
     const contentType = upstream.headers.get('content-type') || ''
     const isPlaylist = contentType.includes('mpegurl') || source.endsWith('.m3u8')
 
     if (isPlaylist) {
       const text = await upstream.text()
-      const origin = new URL(request.url).origin
-      const secret = env.HLS_PROXY_SECRET || 'cinevora-hls-secret'
-      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret.padEnd(32, '0').slice(0, 32)), 'AES-GCM', false, ['encrypt'])
-      const encrypt = async (plain: string) => {
-        const iv = crypto.getRandomValues(new Uint8Array(12))
-        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain))
-        const bytes = new Uint8Array(iv.byteLength + ct.byteLength)
-        bytes.set(iv, 0)
-        bytes.set(new Uint8Array(ct), iv.byteLength)
-        let binary = ''
-        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
-        return btoa(binary).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '')
-      }
       const matches = text.match(/(https?:)?\/\/vdohls\.com\/[^\s"']+/g) || []
       let out = text
       for (const m of matches) {
         const absolute = m.startsWith('//') ? `https:${m}` : m
-        const t = await encrypt(absolute)
+        const t = crypto.randomUUID()
+        if (kv) await kv.put(t, absolute, { expirationTtl: 3600 })
         out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
       }
       const headers = new Headers()
