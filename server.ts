@@ -421,6 +421,77 @@ app.get('/api/subtitle', async (req: any, res: any) => {
   }
 })
 
+// HLS proxy: vdohls.com playlists/segments require a fembed.co Referer.
+app.get('/api/stream/hls', async (req: any, res: any) => {
+  try {
+    let target = readParam(req.query.url)
+    if (!target) {
+      // Clean client-facing entry: resolve from DB like /api/stream/download
+      const movieId = readParam(req.query.movieId)
+      const slot = readParam(req.query.slot) === '2' ? 2 : 1
+      const season = Number(readParam(req.query.season) || 0)
+      const episode = Number(readParam(req.query.episode) || 0)
+      if (!movieId) return res.status(400).json({ error: 'movieId or url is required' })
+      const rows = await tursoQuery('SELECT stream_url, stream_url_2 FROM movies WHERE id = ?', [movieId])
+      const movie = rows[0]
+      if (!movie) return res.status(404).json({ error: 'Movie not found' })
+      target = resolveEpisodeSource({
+        streamUrl: movie.stream_url,
+        streamUrl2: movie.stream_url_2,
+        season,
+        episode,
+        slot,
+      })
+      if (!target) return res.status(404).json({ error: 'No stream URL' })
+    }
+    const parsed = new URL(target)
+    if (!parsed.hostname.endsWith('vdohls.com')) {
+      return res.status(400).json({ error: 'host not allowed' })
+    }
+
+    const range = req.headers.range
+    const upstream = await fetch(target, {
+      headers: {
+        Referer: 'https://fembed.co/',
+        'User-Agent': 'Mozilla/5.0',
+        ...(range ? { Range: range } : {}),
+      },
+    })
+    if (!upstream.ok || !upstream.body) {
+      return res.status(502).json({ error: `Upstream responded ${upstream.status}` })
+    }
+
+    const contentType = upstream.headers.get('content-type') || ''
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    const contentLength = upstream.headers.get('content-length')
+    const contentRange = upstream.headers.get('content-range')
+    const acceptRanges = upstream.headers.get('accept-ranges')
+    if (contentLength) res.setHeader('Content-Length', contentLength)
+    if (contentRange) res.setHeader('Content-Range', contentRange)
+    if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges)
+
+    const isPlaylist = contentType.includes('mpegurl') || target.endsWith('.m3u8')
+    if (isPlaylist) {
+      const text = await upstream.text()
+      const rewritten = text.replace(
+        /(https?:)?\/\/vdohls\.com\/[^\s"']+/g,
+        (match) => {
+          const absolute = match.startsWith('//') ? `https:${match}` : match
+          return `/api/stream/hls?url=${encodeURIComponent(absolute)}`
+        }
+      )
+      res.setHeader('Content-Type', 'application/vnd.apple.mpegurl')
+      return res.status(200).send(rewritten)
+    }
+
+    res.setHeader('Content-Type', contentType || 'application/octet-stream')
+    res.status(upstream.status === 206 ? 206 : 200)
+    Readable.fromWeb(upstream.body as any).pipe(res)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'HLS proxy error' })
+  }
+})
+
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`)
   console.log(`TMDB API proxy: http://localhost:${PORT}/api/tmdb/...`)

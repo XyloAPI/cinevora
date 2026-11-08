@@ -4,7 +4,7 @@ import { useMovieBySlug, useSubtitle } from '@/hooks/useMovies'
 import { IconPlayerPlayFilled, IconDownload } from '@tabler/icons-react'
 import SEO from '@/components/shared/SEO'
 import { VideoPlayer, EmbedPlayer } from '@/components/player'
-import { buildDownloadUrl } from '@/lib/streamEndpoints'
+import { buildDownloadUrl, buildHlsProxyUrl } from '@/lib/streamEndpoints'
 import { isEmbedUrl } from '@/lib/embed'
 import { playbackKey } from '@/lib/playbackPosition'
 import { normalizeDirectUrl, resolveActiveSource, resolveEpisodeSource } from '@/lib/streamUrls'
@@ -98,6 +98,14 @@ export default function WatchPage() {
   const currentStreamUrl = normalizeDirectUrl(
     resolveActiveSource({ primary, mirror, preferMirror: activeServer === 'server2' }) || ''
   )
+  const playerSrc = currentStreamUrl.includes('vdohls.com')
+    ? buildHlsProxyUrl({
+        movieId: movie.id,
+        slot: activeServer === 'server2' && hasServer2 ? 2 : 1,
+        season: subtitleSeason,
+        episode: subtitleEpisode,
+      })
+    : currentStreamUrl
 
   const subtitle = subtitleRow
     ? {
@@ -130,8 +138,10 @@ export default function WatchPage() {
               <EmbedPlayer src={currentStreamUrl} title={movie.title} />
             ) : (
               <VideoPlayer
-                key={currentStreamUrl}
-                src={currentStreamUrl}
+                key={playerSrc}
+                src={currentStreamUrl.includes('vdohls.com')
+                  ? { src: playerSrc, type: 'application/vnd.apple.mpegurl' }
+                  : playerSrc}
                 title={movie.title}
                 movieId={movie.id}
                 season={subtitleSeason}

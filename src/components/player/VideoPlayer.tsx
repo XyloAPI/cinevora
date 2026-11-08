@@ -25,7 +25,7 @@ export interface VideoPlayerSubtitle {
 }
 
 export interface VideoPlayerProps {
-  src: string
+  src: string | { src: string; type?: string }
   title?: string
   storageKey: string
   movieId: string

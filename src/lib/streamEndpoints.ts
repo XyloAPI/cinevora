@@ -17,6 +17,21 @@ export function buildDownloadUrl(params: {
   return `${API_BASE}/stream/download?${query.toString()}`
 }
 
+export function buildHlsProxyUrl(params: {
+  movieId: string
+  slot: 1 | 2
+  season?: number
+  episode?: number
+}): string {
+  const query = new URLSearchParams({
+    movieId: params.movieId,
+    slot: String(params.slot),
+    season: String(params.season ?? 0),
+    episode: String(params.episode ?? 0),
+  })
+  return `${API_BASE}/stream/hls?${query.toString()}`
+}
+
 export function buildSubtitleProxyUrl(params: {
   movieId: string
   season: number
