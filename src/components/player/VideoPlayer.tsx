@@ -215,7 +215,7 @@ export default function VideoPlayer({
     >
       <MediaPlayer
         ref={playerRef}
-        src={src}
+        src={src as any}
         playsInline
         aria-label={title}
         aspectRatio="16/9"
