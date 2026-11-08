@@ -48,8 +48,22 @@ export async function onRequest(context: any) {
 
   try {
     const url = new URL(request.url)
-    const targetUrl = url.searchParams.get('url') || ''
-    let source = targetUrl
+    const token = url.searchParams.get('t') || ''
+    let source = ''
+    if (token) {
+      const secret = env.HLS_PROXY_SECRET || 'cinevora-hls-secret'
+      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret.padEnd(32, '0').slice(0, 32)), 'AES-GCM', false, ['decrypt'])
+      const raw = token.replace(/-/g, '+').replace(/_/g, '/')
+      const padded = raw + '='.repeat((4 - (raw.length % 4)) % 4)
+      const buf = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0))
+      const iv = buf.slice(0, 12)
+      const ct = buf.slice(12)
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
+      source = new TextDecoder().decode(pt)
+    } else {
+      const targetUrl = url.searchParams.get('url') || ''
+      source = targetUrl
+    }
     if (!source) {
       const movieId = url.searchParams.get('movieId') || ''
       const slot = url.searchParams.get('slot') === '2' ? 2 : 1
@@ -89,17 +103,26 @@ export async function onRequest(context: any) {
     if (isPlaylist) {
       const text = await upstream.text()
       const origin = new URL(request.url).origin
-      const rewritten2 = text.replace(
-        /(https?:)?\/\/vdohls\.com\/[^\s"']+/g,
-        (match) => {
-          const absolute = match.startsWith('//') ? `https:${match}` : match
-          return `${origin}/api/stream/hls?url=${encodeURIComponent(absolute)}`
-        }
-      )
+      const secret = env.HLS_PROXY_SECRET || 'cinevora-hls-secret'
+      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret.padEnd(32, '0').slice(0, 32)), 'AES-GCM', false, ['encrypt'])
+      const encrypt = async (plain: string) => {
+        const iv = crypto.getRandomValues(new Uint8Array(12))
+        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain))
+        const buf = new Uint8Array(iv.byteLength + ct.byteLength)
+        buf.set(iv, 0); buf.set(new Uint8Array(ct), iv.byteLength)
+        return btoa(String.fromCharCode(...buf)).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '')
+      }
+      const matches = text.match(/(https?:)?\/\/vdohls\.com\/[^\s"']+/g) || []
+      let out = text
+      for (const m of matches) {
+        const absolute = m.startsWith('//') ? `https:${m}` : m
+        const t = await encrypt(absolute)
+        out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
+      }
       const headers = new Headers()
       headers.set('Content-Type', 'application/vnd.apple.mpegurl')
       headers.set('Access-Control-Allow-Origin', '*')
-      return new Response(rewritten2, { status: 200, headers })
+      return new Response(out, { status: 200, headers })
     }
 
     const headers = new Headers()
