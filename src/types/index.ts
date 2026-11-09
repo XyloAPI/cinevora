@@ -34,6 +34,7 @@ export interface Movie {
   streamUrl?: string
   streamUrl2?: string
   downloadUrl?: string
+  backupUrl?: string
   productionCompanies?: string[]
   status?: string
   trendingRank?: number

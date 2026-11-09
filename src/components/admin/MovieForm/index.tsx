@@ -32,6 +32,7 @@ export default function MovieForm({
   const [streamUrlText, setStreamUrlText] = useState('')
   const [streamUrl2Text, setStreamUrl2Text] = useState('')
   const [downloadUrlText, setDownloadUrlText] = useState('')
+  const [backupUrlText, setBackupUrlText] = useState('')
   const [subtitleUrl, setSubtitleUrl] = useState('')
   const [subtitleLang, setSubtitleLang] = useState<string>('id')
   const [mediaType, setMediaType] = useState<'movie' | 'series'>('movie')
@@ -52,6 +53,8 @@ export default function MovieForm({
     setStreamUrlText(editingMovie.streamUrl || '')
     setStreamUrl2Text(editingMovie.streamUrl2 || '')
     setDownloadUrlText(editingMovie.downloadUrl || '')
+    setBackupUrlText(editingMovie.backupUrl || '')
+    setBackupUrlText(editingMovie.backupUrl || '')
     setSynopsisTranslated(false)
     setTaglineTranslated(false)
     originalSynopsisRef.current = editingMovie.synopsis || ''
@@ -183,6 +186,7 @@ export default function MovieForm({
       finalStreamUrl = rawStreamUrl ? normalizeDirectUrl(rawStreamUrl) : ''
       finalStreamUrl2 = rawStreamUrl2 ? normalizeDirectUrl(rawStreamUrl2) : ''
       finalDownloadUrl = downloadUrlText.trim() ? normalizeDirectUrl(downloadUrlText.trim()) : ''
+      const finalBackupUrl = backupUrlText.trim() ? normalizeDirectUrl(backupUrlText.trim()) : ''
     }
 
     const data = {
@@ -220,6 +224,7 @@ export default function MovieForm({
       stream_url: finalStreamUrl || null,
       stream_url_2: finalStreamUrl2 || null,
       download_url: finalDownloadUrl || null,
+backup_url: finalBackupUrl || null,
       production_companies: editingMovie.productionCompanies ? JSON.stringify(editingMovie.productionCompanies) : null,
       status: editingMovie.status || null,
       provider_id: Number(form.get('providerId')) || null,
@@ -459,6 +464,21 @@ export default function MovieForm({
             </label>
 
             <label className="flex flex-col gap-1 text-[11px] text-white/40">
+             <label className="flex flex-col gap-1 text-[11px] text-white/40">
+               Backup URL (opsional, dipakai jika Download URL kosong)
+               <input
+                 value={backupUrlText}
+                 placeholder="https://backup.example.com/film.mp4"
+                 onChange={(e) => setBackupUrlText(e.target.value)}
+                 onBlur={() => {
+                   if (backupUrlText.trim()) {
+                     setBackupUrlText(normalizeDirectUrl(backupUrlText))
+                   }
+                 }}
+                 className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5"
+               />
+             </label>
+
               Subtitle URL (.vtt / .srt)
               <input
                 name="subtitleUrl"

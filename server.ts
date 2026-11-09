@@ -339,7 +339,7 @@ app.get('/api/stream/download', async (req: any, res: any) => {
     const episode = Number(readParam(req.query.episode) || 0)
     if (!movieId) return res.status(400).json({ error: 'movieId is required' })
 
-    const rows = await tursoQuery('SELECT id, title, stream_url, stream_url_2, download_url FROM movies WHERE id = ?', [movieId])
+    const rows = await tursoQuery('SELECT id, title, stream_url, stream_url_2, download_url, backup_url FROM movies WHERE id = ?', [movieId])
     const movie = rows[0]
     if (!movie) return res.status(404).json({ error: 'Movie not found' })
 

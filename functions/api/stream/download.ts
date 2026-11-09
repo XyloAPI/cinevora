@@ -62,14 +62,14 @@ export async function onRequest(context: any) {
 
     const rows = await tursoQuery(
       env,
-      'SELECT id, title, stream_url, stream_url_2, download_url FROM movies WHERE id = ?',
+      'SELECT id, title, stream_url, stream_url_2, download_url, backup_url FROM movies WHERE id = ?',
       [movieId]
     )
     const movie = rows[0]
     if (!movie) return jsonError('Movie not found', 404)
 
     const source = resolveEpisodeSource({
-      streamUrl: movie.download_url,
+      streamUrl: movie.download_url || movie.backup_url,
       streamUrl2: null,
       season,
       episode,
