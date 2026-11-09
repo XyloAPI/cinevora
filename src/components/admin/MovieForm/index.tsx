@@ -448,7 +448,7 @@ backup_url: finalBackupUrl || null,
             </label>
 
             <label className="flex flex-col gap-1 text-[11px] text-white/40">
-              Download URL (opsional, untuk tombol Download)
+              Download URL
               <input
                 name="downloadUrl"
                 value={downloadUrlText}
@@ -465,7 +465,7 @@ backup_url: finalBackupUrl || null,
 
             <label className="flex flex-col gap-1 text-[11px] text-white/40">
              <label className="flex flex-col gap-1 text-[11px] text-white/40">
-               Backup URL (opsional, dipakai jika Download URL kosong)
+               Backup URL
                <input
                  value={backupUrlText}
                  placeholder="https://backup.example.com/film.mp4"
