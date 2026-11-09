@@ -92,13 +92,13 @@ export async function onRequest(context: any) {
       const headers = new Headers()
       headers.set('Content-Type', contentType || 'application/octet-stream')
       headers.set('Access-Control-Allow-Origin', '*')
-      const contentLength = res.headers.get('content-length')
+      const buffer = await res.arrayBuffer()
       const contentRange = res.headers.get('content-range')
       const acceptRanges = res.headers.get('accept-ranges')
-      if (contentLength) headers.set('Content-Length', contentLength)
+      headers.set('Content-Length', String(buffer.byteLength))
       if (contentRange) headers.set('Content-Range', contentRange)
       if (acceptRanges) headers.set('Accept-Ranges', acceptRanges)
-      return new Response(res.body, {
+      return new Response(buffer, {
         status: res.status === 206 ? 206 : 200,
         headers,
       })
@@ -161,18 +161,19 @@ export async function onRequest(context: any) {
     const headers = new Headers()
     headers.set('Content-Type', contentType || 'application/octet-stream')
     headers.set('Access-Control-Allow-Origin', '*')
-    const contentLength = upstream.headers.get('content-length')
+    const buffer = await upstream.arrayBuffer()
     const contentRange = upstream.headers.get('content-range')
     const acceptRanges = upstream.headers.get('accept-ranges')
-    if (contentLength) headers.set('Content-Length', contentLength)
+    headers.set('Content-Length', String(buffer.byteLength))
     if (contentRange) headers.set('Content-Range', contentRange)
     if (acceptRanges) headers.set('Accept-Ranges', acceptRanges)
-    return new Response(upstream.body, {
+    return new Response(buffer, {
       status: upstream.status === 206 ? 206 : 200,
       headers,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'HLS proxy error'
+    console.error('HLS proxy error:', msg, err)
     return jsonError(msg, 500)
   }
 }
