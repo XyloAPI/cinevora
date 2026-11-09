@@ -42,24 +42,38 @@ function jsonError(error: string, status: number): Response {
   })
 }
 
+function b64urlEncode(str: string): string {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function b64urlDecode(str: string): string {
+  const padded = str + '='.repeat((4 - (str.length % 4)) % 4)
+  return atob(padded.replace(/-/g, '+').replace(/_/g, '/'))
+}
+
 export async function onRequest(context: any) {
   const { request, env } = context
   if (request.method !== 'GET') return jsonError('Method not allowed', 405)
 
   try {
     const url = new URL(request.url)
-    const kv = env.HLS_TOKENS
     const origin = url.origin
 
-    // Token-based lookup (segment / nested playlist)
+    // Token-based lookup (base64url encoded URL)
     const token = url.searchParams.get('t') || ''
-    if (token && kv) {
-      const upstream = await kv.get(token)
-      if (!upstream) return jsonError('Token expired', 404)
+    if (token) {
+      let upstream: string
+      try {
+        upstream = b64urlDecode(token)
+      } catch {
+        return jsonError('Invalid token', 400)
+      }
+      if (!upstream.includes('://')) return jsonError('Invalid token', 400)
+
       const range = request.headers.get('Range')
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 8000)
-      let res!: Response
+      let res: Response
       try {
         res = await fetch(upstream, {
           headers: {
@@ -74,7 +88,8 @@ export async function onRequest(context: any) {
       } finally {
         clearTimeout(timeoutId)
       }
-      if (!res.ok || !res.body) return jsonError(`Upstream responded ${res.status}`, 502)
+
+      if (!res.ok) return jsonError(`Upstream responded ${res.status}`, 502)
       const contentType = res.headers.get('content-type') || ''
       const isPlaylist = contentType.includes('mpegurl') || upstream.endsWith('.m3u8')
 
@@ -89,8 +104,7 @@ export async function onRequest(context: any) {
           } catch {
             continue
           }
-          const t = crypto.randomUUID()
-          await kv.put(t, absolute, { expirationTtl: 86400 })
+          const t = b64urlEncode(absolute)
           out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
         }
         const headers = new Headers()
@@ -99,13 +113,13 @@ export async function onRequest(context: any) {
         return new Response(out, { status: 200, headers })
       }
 
+      const buffer = await res.arrayBuffer()
       const headers = new Headers()
       headers.set('Content-Type', contentType || 'application/octet-stream')
       headers.set('Access-Control-Allow-Origin', '*')
-      const buffer = await res.arrayBuffer()
+      headers.set('Content-Length', String(buffer.byteLength))
       const contentRange = res.headers.get('content-range')
       const acceptRanges = res.headers.get('accept-ranges')
-      headers.set('Content-Length', String(buffer.byteLength))
       if (contentRange) headers.set('Content-Range', contentRange)
       if (acceptRanges) headers.set('Accept-Ranges', acceptRanges)
       return new Response(buffer, {
@@ -137,9 +151,9 @@ export async function onRequest(context: any) {
     const range = request.headers.get('Range')
     const controller2 = new AbortController()
     const timeoutId2 = setTimeout(() => controller2.abort(), 8000)
-    let upstream!: Response
+    let upstreamRes: Response
     try {
-      upstream = await fetch(source, {
+      upstreamRes = await fetch(source, {
         headers: {
           Referer: 'https://fembed.co/',
           Origin: 'https://fembed.co',
@@ -152,13 +166,13 @@ export async function onRequest(context: any) {
     } finally {
       clearTimeout(timeoutId2)
     }
-    if (!upstream.ok || !upstream.body) return jsonError(`Upstream responded ${upstream.status}`, 502)
 
-    const contentType = upstream.headers.get('content-type') || ''
+    if (!upstreamRes.ok) return jsonError(`Upstream responded ${upstreamRes.status}`, 502)
+    const contentType = upstreamRes.headers.get('content-type') || ''
     const isPlaylist = contentType.includes('mpegurl') || source.endsWith('.m3u8')
 
     if (isPlaylist) {
-      const text = await upstream.text()
+      const text = await upstreamRes.text()
       const matches = text.match(/(https?:)?\/\/[^\s"']+/g) || []
       let out = text
       for (const m of matches) {
@@ -168,8 +182,7 @@ export async function onRequest(context: any) {
         } catch {
           continue
         }
-        const t = crypto.randomUUID()
-        if (kv) await kv.put(t, absolute, { expirationTtl: 86400 })
+        const t = b64urlEncode(absolute)
         out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
       }
       const headers = new Headers()
@@ -178,22 +191,22 @@ export async function onRequest(context: any) {
       return new Response(out, { status: 200, headers })
     }
 
+    const buffer = await upstreamRes.arrayBuffer()
     const headers = new Headers()
     headers.set('Content-Type', contentType || 'application/octet-stream')
     headers.set('Access-Control-Allow-Origin', '*')
-    const buffer = await upstream.arrayBuffer()
-    const contentRange = upstream.headers.get('content-range')
-    const acceptRanges = upstream.headers.get('accept-ranges')
     headers.set('Content-Length', String(buffer.byteLength))
+    const contentRange = upstreamRes.headers.get('content-range')
+    const acceptRanges = upstreamRes.headers.get('accept-ranges')
     if (contentRange) headers.set('Content-Range', contentRange)
     if (acceptRanges) headers.set('Accept-Ranges', acceptRanges)
     return new Response(buffer, {
-      status: upstream.status === 206 ? 206 : 200,
+      status: upstreamRes.status === 206 ? 206 : 200,
       headers,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'HLS proxy error'
-    console.error('HLS proxy error:', msg, err)
+    console.error('HLS proxy error:', msg)
     return jsonError(msg, 500)
   }
 }
