@@ -68,17 +68,11 @@ export async function onRequest(context: any) {
     if (!movie) return jsonError('Movie not found', 404)
 
     const source = resolveEpisodeSource({
-      streamUrl: movie.download_url || movie.backup_url,
+      streamUrl: movie.backup_url,
       streamUrl2: null,
       season,
       episode,
       slot: 1,
-    }) || resolveEpisodeSource({
-      streamUrl: movie.stream_url,
-      streamUrl2: movie.stream_url_2,
-      season,
-      episode,
-      slot,
     })
     if (!source) return jsonError('No stream URL for this episode', 404)
 

@@ -343,17 +343,11 @@ app.get('/api/stream/download', async (req: any, res: any) => {
     if (!movie) return res.status(404).json({ error: 'Movie not found' })
 
     const url = resolveEpisodeSource({
-      streamUrl: movie.download_url,
+      streamUrl: movie.backup_url,
       streamUrl2: null,
       season,
       episode,
       slot: 1,
-    }) || resolveEpisodeSource({
-      streamUrl: movie.stream_url,
-      streamUrl2: movie.stream_url_2,
-      season,
-      episode,
-      slot,
     })
     if (!url) return res.status(404).json({ error: 'No stream URL for this episode' })
 

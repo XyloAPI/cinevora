@@ -98,6 +98,15 @@ export default function WatchPage() {
   const currentStreamUrl = normalizeDirectUrl(
     resolveActiveSource({ primary, mirror, preferMirror: activeServer === 'server2' }) || ''
   )
+
+  // Direct download URL (if set) — bypasses proxy. Falls back to proxy (backup_url) otherwise.
+  const directDownloadUrl = resolveEpisodeSource({
+    streamUrl: movie.downloadUrl || '',
+    streamUrl2: null,
+    season: subtitleSeason,
+    episode: subtitleEpisode,
+    slot: 1,
+  })
   const playerSrc = currentStreamUrl.includes('vdohls.com')
     ? buildHlsProxyUrl({
         movieId: movie.id,
@@ -237,12 +246,15 @@ export default function WatchPage() {
             )}
             {currentStreamUrl && (
               <a
-                href={buildDownloadUrl({
-                  movieId: movie.id,
-                  slot: activeServer === 'server2' && hasServer2 ? 2 : 1,
-                  season: subtitleSeason,
-                  episode: subtitleEpisode,
-                })}
+                href={
+                  directDownloadUrl ||
+                  buildDownloadUrl({
+                    movieId: movie.id,
+                    slot: activeServer === 'server2' && hasServer2 ? 2 : 1,
+                    season: subtitleSeason,
+                    episode: subtitleEpisode,
+                  })
+                }
                 className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white/70 text-xs rounded hover:bg-white/20 transition-colors"
               >
                 <IconDownload size={14} className="text-green-400" /> Download
