@@ -70,12 +70,17 @@ export async function onRequest(context: any) {
 
       if (isPlaylist) {
         const text = await res.text()
-        const matches = text.match(/(https?:)?\/\/vdohls\.com\/[^\s"']+/g) || []
+        const matches = text.match(/(https?:)?\/\/[^\s"']+/g) || []
         let out = text
         for (const m of matches) {
           const absolute = m.startsWith('//') ? `https:${m}` : m
+          try {
+            new URL(absolute)
+          } catch {
+            continue
+          }
           const t = crypto.randomUUID()
-          await kv.put(t, absolute, { expirationTtl: 3600 })
+          await kv.put(t, absolute, { expirationTtl: 86400 })
           out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
         }
         const headers = new Headers()
@@ -134,12 +139,17 @@ export async function onRequest(context: any) {
 
     if (isPlaylist) {
       const text = await upstream.text()
-      const matches = text.match(/(https?:)?\/\/vdohls\.com\/[^\s"']+/g) || []
+      const matches = text.match(/(https?:)?\/\/[^\s"']+/g) || []
       let out = text
       for (const m of matches) {
         const absolute = m.startsWith('//') ? `https:${m}` : m
+        try {
+          new URL(absolute)
+        } catch {
+          continue
+        }
         const t = crypto.randomUUID()
-        if (kv) await kv.put(t, absolute, { expirationTtl: 3600 })
+        if (kv) await kv.put(t, absolute, { expirationTtl: 86400 })
         out = out.replace(m, `${origin}/api/stream/hls?t=${t}`)
       }
       const headers = new Headers()
