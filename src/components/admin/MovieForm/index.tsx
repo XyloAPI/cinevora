@@ -479,7 +479,7 @@ backup_url: finalBackupUrl || null,
                />
              </label>
 
-              Subtitle URL (.vtt / .srt)
+              Subtitle URL
               <input
                 name="subtitleUrl"
                 value={subtitleUrl}
