@@ -156,6 +156,7 @@ export default function MovieForm({
     let finalStreamUrl = ''
     let finalStreamUrl2 = ''
     let finalDownloadUrl = ''
+  let finalBackupUrl = ''
     let totalSeasons: number | null = null
     let totalEpisodes: number | null = null
 
@@ -186,7 +187,7 @@ export default function MovieForm({
       finalStreamUrl = rawStreamUrl ? normalizeDirectUrl(rawStreamUrl) : ''
       finalStreamUrl2 = rawStreamUrl2 ? normalizeDirectUrl(rawStreamUrl2) : ''
       finalDownloadUrl = downloadUrlText.trim() ? normalizeDirectUrl(downloadUrlText.trim()) : ''
-      const finalBackupUrl = backupUrlText.trim() ? normalizeDirectUrl(backupUrlText.trim()) : ''
+      finalBackupUrl = backupUrlText.trim() ? normalizeDirectUrl(backupUrlText.trim()) : ''
     }
 
     const data = {
