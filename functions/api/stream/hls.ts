@@ -64,7 +64,9 @@ export async function onRequest(context: any) {
         res = await fetch(upstream, {
           headers: {
             Referer: 'https://fembed.co/',
-            'User-Agent': 'Mozilla/5.0',
+            Origin: 'https://fembed.co',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+            Accept: '*/*',
             ...(range ? { Range: range } : {}),
           },
           signal: controller.signal,
@@ -140,7 +142,9 @@ export async function onRequest(context: any) {
       upstream = await fetch(source, {
         headers: {
           Referer: 'https://fembed.co/',
-          'User-Agent': 'Mozilla/5.0',
+          Origin: 'https://fembed.co',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+          Accept: '*/*',
           ...(range ? { Range: range } : {}),
         },
         signal: controller2.signal,
