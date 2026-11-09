@@ -255,6 +255,8 @@ export default function WatchPage() {
                     episode: subtitleEpisode,
                   })
                 }
+                target="_blank"
+                rel="noopener noreferrer"
                 className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white/70 text-xs rounded hover:bg-white/20 transition-colors"
               >
                 <IconDownload size={14} className="text-green-400" /> Download

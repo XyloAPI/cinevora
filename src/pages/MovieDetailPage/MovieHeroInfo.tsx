@@ -160,6 +160,8 @@ export default function MovieHeroInfo({
               {movie.type !== 'series' && movie.streamUrl && (
                 <a
                   href={movie.downloadUrl || buildDownloadUrl({ movieId: movie.id, slot: 1, season: 0, episode: 0 })}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white/80 font-medium rounded-lg hover:bg-white/20 transition-colors text-sm border border-white/[0.06]"
                 >
                   <IconDownload size={16} className="text-green-400" />
