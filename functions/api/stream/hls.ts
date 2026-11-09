@@ -57,13 +57,21 @@ export async function onRequest(context: any) {
       const upstream = await kv.get(token)
       if (!upstream) return jsonError('Token expired', 404)
       const range = request.headers.get('Range')
-      const res = await fetch(upstream, {
-        headers: {
-          Referer: 'https://fembed.co/',
-          'User-Agent': 'Mozilla/5.0',
-          ...(range ? { Range: range } : {}),
-        },
-      })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000)
+      let res!: Response
+      try {
+        res = await fetch(upstream, {
+          headers: {
+            Referer: 'https://fembed.co/',
+            'User-Agent': 'Mozilla/5.0',
+            ...(range ? { Range: range } : {}),
+          },
+          signal: controller.signal,
+        })
+      } finally {
+        clearTimeout(timeoutId)
+      }
       if (!res.ok || !res.body) return jsonError(`Upstream responded ${res.status}`, 502)
       const contentType = res.headers.get('content-type') || ''
       const isPlaylist = contentType.includes('mpegurl') || upstream.endsWith('.m3u8')
@@ -125,13 +133,21 @@ export async function onRequest(context: any) {
     if (!source.includes('vdohls.com')) return jsonError('Not an HLS source', 400)
 
     const range = request.headers.get('Range')
-    const upstream = await fetch(source, {
-      headers: {
-        Referer: 'https://fembed.co/',
-        'User-Agent': 'Mozilla/5.0',
-        ...(range ? { Range: range } : {}),
-      },
-    })
+    const controller2 = new AbortController()
+    const timeoutId2 = setTimeout(() => controller2.abort(), 8000)
+    let upstream!: Response
+    try {
+      upstream = await fetch(source, {
+        headers: {
+          Referer: 'https://fembed.co/',
+          'User-Agent': 'Mozilla/5.0',
+          ...(range ? { Range: range } : {}),
+        },
+        signal: controller2.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId2)
+    }
     if (!upstream.ok || !upstream.body) return jsonError(`Upstream responded ${upstream.status}`, 502)
 
     const contentType = upstream.headers.get('content-type') || ''
