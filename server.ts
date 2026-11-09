@@ -7,7 +7,6 @@ import { Readable } from 'stream'
 import { resolveEpisodeSource, sanitizeFilename } from './src/lib/streamUrls'
 import { computeSubtitleEtag, etagMatches } from './src/lib/subtitleCache'
 import { ensureVtt } from './src/lib/subtitleFormat'
-import { isEmbedUrl } from './src/lib/embed'
 
 dotenv.config()
 
@@ -357,7 +356,6 @@ app.get('/api/stream/download', async (req: any, res: any) => {
       slot,
     })
     if (!url) return res.status(404).json({ error: 'No stream URL for this episode' })
-    if (isEmbedUrl(url)) return res.status(404).json({ error: 'No download URL for this title' })
 
     const range = req.headers.range
     const upstream = await fetch(url, { headers: range ? { Range: range } : {} })

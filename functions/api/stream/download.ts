@@ -1,5 +1,4 @@
 import { resolveEpisodeSource, sanitizeFilename } from '../../../src/lib/streamUrls'
-import { isEmbedUrl } from '../../../src/lib/embed'
 
 function toTursoArgs(params: any[]): any[] {
   return params.map((val: any) => {
@@ -82,7 +81,6 @@ export async function onRequest(context: any) {
       slot,
     })
     if (!source) return jsonError('No stream URL for this episode', 404)
-    if (isEmbedUrl(source)) return jsonError('No download URL for this title', 404)
 
     const range = request.headers.get('Range')
     const upstream = await fetch(source, { headers: range ? { Range: range } : {} })
