@@ -3,10 +3,12 @@ import type { Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import crypto from 'crypto'
-import { Readable } from 'stream'
 import { resolveEpisodeSource, sanitizeFilename } from './src/lib/streamUrls'
+import { pipeUpstream } from './src/lib/streamPipe'
 import { computeSubtitleEtag, etagMatches } from './src/lib/subtitleCache'
 import { ensureVtt } from './src/lib/subtitleFormat'
+import { onRequestGet as getTranslationSettings, onRequestPost as saveTranslationSettings } from './functions/api/admin/translation-settings'
+import { onRequestPost as translateText } from './functions/api/translate'
 
 dotenv.config()
 
@@ -15,6 +17,33 @@ const PORT = process.env.PORT || 3001
 
 app.use(cors())
 app.use(express.json())
+
+function adaptCloudflareFunction(
+  handler: (context: { request: globalThis.Request; env: Record<string, string | undefined> }) => Promise<globalThis.Response>
+) {
+  return async (req: Request, res: Response) => {
+    try {
+      const headers = new Headers()
+      if (req.headers.authorization) headers.set('Authorization', req.headers.authorization)
+      if (req.headers['content-type']) headers.set('Content-Type', req.headers['content-type'])
+      const method = req.method.toUpperCase()
+      const request = new globalThis.Request(new URL(req.originalUrl, `http://${req.headers.host || 'localhost'}`), {
+        method,
+        headers,
+        ...(method === 'GET' || method === 'HEAD' ? {} : { body: JSON.stringify(req.body) }),
+      })
+      const response = await handler({ request, env: process.env })
+      response.headers.forEach((value, key) => res.setHeader(key, value))
+      res.status(response.status).send(Buffer.from(await response.arrayBuffer()))
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Internal server error' })
+    }
+  }
+}
+
+app.get('/api/admin/translation-settings', adaptCloudflareFunction(getTranslationSettings))
+app.post('/api/admin/translation-settings', adaptCloudflareFunction(saveTranslationSettings))
+app.post('/api/translate', adaptCloudflareFunction(translateText))
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_TOKEN = process.env.TMDB_READ_ACCESS_TOKEN
@@ -30,6 +59,41 @@ app.get('/api/tmdb/trending/:time_window', async (req: any, res: any) => {
     if (!response.ok) throw new Error(`TMDB ${response.status}`)
     const data = await response.json()
     res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+app.get('/api/tmdb/list/:category', async (req: any, res: any) => {
+  try {
+    const { category } = req.params
+    const { region = '', page = '1', time_window = 'week' } = req.query
+    let path: string
+
+    if (category === 'now_playing') {
+      path = '/movie/now_playing'
+    } else if (category === 'popular') {
+      path = '/movie/popular'
+    } else if (category === 'top_rated') {
+      path = '/movie/top_rated'
+    } else if (category === 'trending') {
+      path = region
+        ? '/movie/popular'
+        : `/trending/movie/${time_window === 'day' ? 'day' : 'week'}`
+    } else {
+      return res.status(400).json({ error: 'Invalid category' })
+    }
+
+    const url = new URL(`${TMDB_BASE}${path}`)
+    url.searchParams.set('page', String(page))
+    if (region) url.searchParams.set('region', String(region))
+    url.searchParams.set('language', req.query.language || (region === 'ID' ? 'id-ID' : 'en-US'))
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${TMDB_TOKEN}` },
+    })
+    const body = await response.text()
+    res.status(response.status).type('application/json').send(body)
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' })
   }
@@ -366,7 +430,7 @@ app.get('/api/stream/download', async (req: any, res: any) => {
     if (contentRange) res.setHeader('Content-Range', contentRange)
     if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges)
     res.status(upstream.status === 206 ? 206 : 200)
-    Readable.fromWeb(upstream.body as any).pipe(res)
+    pipeUpstream(upstream.body, res)
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Download error' })
   }
@@ -416,7 +480,7 @@ app.get('/api/subtitle', async (req: any, res: any) => {
 // HLS proxy: vdohls.com playlists/segments require a fembed.co Referer.
 app.get('/api/stream/hls', async (req: any, res: any) => {
   try {
-    let target = readParam(req.query.url)
+    let target: string | null = readParam(req.query.url)
     if (!target) {
       // Clean client-facing entry: resolve from DB like /api/stream/download
       const movieId = readParam(req.query.movieId)
@@ -478,16 +542,27 @@ app.get('/api/stream/hls', async (req: any, res: any) => {
 
     res.setHeader('Content-Type', contentType || 'application/octet-stream')
     res.status(upstream.status === 206 ? 206 : 200)
-    Readable.fromWeb(upstream.body as any).pipe(res)
+    pipeUpstream(upstream.body, res)
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'HLS proxy error' })
   }
 })
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`)
   console.log(`TMDB API proxy: http://localhost:${PORT}/api/tmdb/...`)
   console.log(`Database proxy: http://localhost:${PORT}/api/db/query`)
   console.log(`Download proxy: http://localhost:${PORT}/api/stream/download`)
   console.log(`Subtitle proxy: http://localhost:${PORT}/api/subtitle`)
+})
+
+// Without this the crash is an uncaught exception and every /api route
+// 500s through the Vite proxy with no clue why.
+server.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Stop the other process (or change PORT) and restart.`)
+  } else {
+    console.error('Backend server failed to start:', error)
+  }
+  process.exit(1)
 })

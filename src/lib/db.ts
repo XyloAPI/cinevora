@@ -232,6 +232,16 @@ export async function saveSubtitles(movieId: string, rows: SubtitleRowInput[]): 
   }
 }
 
+async function ensureColumnExists(table: 'movies' | 'episode_subtitles', column: string, definition: string) {
+  const rows = await dbQuery<{ name: string }>(
+    `SELECT name FROM pragma_table_info('${table}') WHERE name = ?`,
+    [column]
+  )
+  if (rows.length === 0) {
+    await dbQuery(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  }
+}
+
 export async function runMigration() {
   await dbQuery(`CREATE TABLE IF NOT EXISTS movies (
     id TEXT PRIMARY KEY,
@@ -287,28 +297,10 @@ export async function runMigration() {
     PRIMARY KEY (movie_id, season_no, episode_no)
   )`)
 
-  try {
-    await dbQuery('ALTER TABLE movies ADD COLUMN stream_url_2 TEXT')
-  } catch {
-    // Column may already exist
-  }
-
-  try {
-    await dbQuery('ALTER TABLE movies ADD COLUMN download_url TEXT')
-  } catch {
-    // Column may already exist
-  }
-  try {
-    await dbQuery('ALTER TABLE movies ADD COLUMN backup_url TEXT')
-  } catch {
-    // Column may already exist
-  }
-
-  try {
-    await dbQuery('ALTER TABLE episode_subtitles ADD COLUMN updated_at TEXT')
-  } catch {
-    // Column may already exist
-  }
+  await ensureColumnExists('movies', 'stream_url_2', 'TEXT')
+  await ensureColumnExists('movies', 'download_url', 'TEXT')
+  await ensureColumnExists('movies', 'backup_url', 'TEXT')
+  await ensureColumnExists('episode_subtitles', 'updated_at', 'TEXT')
 
   await migrateGenresToEnglish()
 }

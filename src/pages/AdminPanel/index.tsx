@@ -14,9 +14,10 @@ import LoginForm from '@/components/admin/LoginForm'
 import DashboardTab from '@/components/admin/DashboardTab'
 import GenresTab from '@/components/admin/GenresTab'
 import ToolsTab from '@/components/admin/ToolsTab'
+import TranslationSettings from '@/components/admin/TranslationSettings'
 import MoviesTab from './MoviesTab'
 
-type Tab = 'dashboard' | 'movies' | 'genres' | 'tools'
+type Tab = 'dashboard' | 'movies' | 'genres' | 'tools' | 'settings'
 const PAGE_SIZE = 15
 
 export default function AdminPanel() {
@@ -310,6 +311,7 @@ export default function AdminPanel() {
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'movies', label: 'Movie Manager' },
     { id: 'genres', label: 'Genre Manager' },
+    { id: 'settings', label: 'Settings' },
     { id: 'tools', label: 'Developer Tools' },
   ]
 
@@ -391,6 +393,8 @@ export default function AdminPanel() {
         )}
 
         {tab === 'genres' && <GenresTab genresData={genresData} />}
+
+        {tab === 'settings' && <TranslationSettings />}
 
         {tab === 'tools' && (
           <ToolsTab

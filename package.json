@@ -10,7 +10,7 @@
     "seed": "tsx src/scripts/seed.ts",
     "scrape": "tsx src/scripts/scrape-tmdb.ts",
     "server": "tsx server.ts",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
+    "dev:all": "concurrently --kill-others-on-fail -n api,web \"npm run server\" \"npm run dev\"",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -10,6 +10,9 @@ function isReadOnlyQuery(sql: string): boolean {
   if (!normalized.startsWith('select')) {
     return false
   }
+  if (/\bapp_settings\b/.test(normalized)) {
+    return false
+  }
   if (normalized.includes(';')) {
     const parts = normalized.split(';')
     if (parts.slice(1).some((p) => p.trim().length > 0)) {
