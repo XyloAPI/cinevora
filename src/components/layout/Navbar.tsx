@@ -10,11 +10,29 @@ export default function Navbar() {
   const [genreOpen, setGenreOpen] = useState(false)
   const [searchParams] = useSearchParams()
   const searchQuery = searchParams.get('search') || ''
+  const [searchDraft, setSearchDraft] = useState(searchQuery)
   const [searchOpen, setSearchOpen] = useState(!!searchQuery)
   const navigate = useNavigate()
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const genreRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setSearchDraft(searchQuery)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (!searchOpen) return
+
+    const query = searchDraft.trim()
+    if (query === searchQuery.trim()) return
+
+    const timeout = window.setTimeout(() => {
+      navigate(query ? `/movies?search=${encodeURIComponent(query)}` : '/movies', { replace: true })
+    }, 300)
+
+    return () => window.clearTimeout(timeout)
+  }, [navigate, searchDraft, searchOpen, searchQuery])
 
   useEffect(() => {
     if (searchOpen && inputRef.current) {
@@ -28,21 +46,18 @@ export default function Navbar() {
         setGenreOpen(false)
       }
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        if (!searchQuery) {
+        if (!searchQuery && !searchDraft.trim()) {
           setSearchOpen(false)
         }
       }
     }
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
-  }, [searchQuery])
+  }, [searchDraft, searchQuery])
 
-  const handleSearchChange = (val: string) => {
-    if (val.trim()) {
-      navigate(`/movies?search=${encodeURIComponent(val)}`)
-    } else {
-      navigate('/movies')
-    }
+  const submitSearch = () => {
+    const query = searchDraft.trim()
+    navigate(query ? `/movies?search=${encodeURIComponent(query)}` : '/movies', { replace: true })
   }
 
   const handleSearchClick = () => {
@@ -52,6 +67,8 @@ export default function Navbar() {
       setSearchOpen(false)
       if (searchQuery) {
         navigate('/movies')
+      } else if (searchDraft.trim()) {
+        submitSearch()
       }
     }
   }
@@ -65,7 +82,7 @@ export default function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
-            {navLinks.filter((l) => l.label !== 'Genres').map((link) => (
+            {navLinks.filter((l) => l.label !== 'Genre').map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
@@ -102,20 +119,22 @@ export default function Navbar() {
           {/* Mobile: overlay search */}
           <div className={`md:hidden absolute left-0 right-0 top-0 h-14 bg-cinema-950/95 backdrop-blur-md flex items-center px-4 z-50 transition-all duration-200 ${searchOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
             <IconSearch size={16} className="text-white/30 shrink-0" />
-            <input type="text" placeholder="Search movies..." autoFocus
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+            <input type="text" placeholder="Cari film..." autoFocus
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
               className="w-full bg-transparent text-white text-[13px] px-3 py-1.5 outline-none placeholder-white/20" />
-            <button onClick={() => { setSearchOpen(false); navigate('/movies'); }} className="text-white/40 hover:text-white p-1">
+            <button onClick={() => { setSearchOpen(false); setSearchDraft(''); navigate('/movies'); }} className="text-white/40 hover:text-white p-1">
               <IconX size={16} />
             </button>
           </div>
           {/* Desktop: slide-out search */}
           <div ref={searchRef} className="hidden md:flex items-center">
             <div className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${searchOpen ? 'w-48' : 'w-0'}`}>
-              <input ref={inputRef} type="text" placeholder="Search movies..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
+              <input ref={inputRef} type="text" placeholder="Cari film..."
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
                 className="w-full bg-white/10 text-white text-[13px] px-3 py-1.5 rounded outline-none border border-white/[0.08] focus:border-white/25 placeholder-white/30 transition-colors" />
             </div>
             <button onClick={handleSearchClick}

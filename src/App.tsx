@@ -60,7 +60,6 @@ const WatchPage = lazyWithRetry(() => import('@/pages/WatchPage'))
 const TrailerPage = lazyWithRetry(() => import('@/pages/TrailerPage'))
 const AdminPanel = lazyWithRetry(() => import('@/pages/AdminPanel'))
 const FAQPage = lazyWithRetry(() => import('@/pages/FAQPage'))
-const ContactPage = lazyWithRetry(() => import('@/pages/ContactPage'))
 const PrivacyPage = lazyWithRetry(() => import('@/pages/PrivacyPage'))
 const TermsPage = lazyWithRetry(() => import('@/pages/TermsPage'))
 
@@ -179,12 +178,12 @@ export default function App() {
         }>
           <Route path="/" element={<HomePage />} />
           <Route path="/trending" element={<TrendingPage />} />
+          <Route path="/trending/:list" element={<TrendingPage />} />
           <Route path="/movies" element={<MoviesPage />} />
           <Route path="/series" element={<SeriesPage />} />
           <Route path="/genres" element={<GenresPage />} />
           <Route path="/movie/:slug" element={<MovieDetailPage />} />
           <Route path="/faq" element={<FAQPage />} />
-          <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="*" element={<HomePage />} />

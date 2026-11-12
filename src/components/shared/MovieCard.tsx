@@ -16,9 +16,9 @@ interface MovieCardProps {
 export default function MovieCard({ movie, compact, countdownDate, grid: fillWidth, fetchPriority }: MovieCardProps) {
   if (compact) {
     return (
-      <Link to={`/movie/${movie.slug}`} className={`group block relative z-10 hover:z-30 ${fillWidth ? 'w-full self-start' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
-        <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
-          <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
+      <Link to={`/movie/${movie.slug}`} className={`group block relative z-10 ${fillWidth ? 'w-full self-start' : 'flex-shrink-0 w-[170px] sm:w-[185px]'}`}>
+        <div>
+          <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20">
             <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute top-1.5 right-1.5">
@@ -38,7 +38,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
               </div>
             )}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cinema-red/90 shadow-lg scale-90 group-hover:scale-100 transition-transform duration-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cinema-red/90 shadow-lg">
                 <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </div>
             </div>
@@ -60,9 +60,9 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
   }
 
   return (
-    <Link to={`/movie/${movie.slug}`} className="group block relative z-10 hover:z-30">
-      <div className="transition-transform duration-300 ease-out group-hover:-translate-y-0.5">
-        <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20 group-hover:shadow-cinema-red/10 transition-shadow duration-300">
+    <Link to={`/movie/${movie.slug}`} className="group block">
+      <div>
+        <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-cinema-800 shadow-lg shadow-black/20">
           <LazyImage src={movie.poster} alt={movie.title} fetchPriority={fetchPriority} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
@@ -101,7 +101,7 @@ export default function MovieCard({ movie, compact, countdownDate, grid: fillWid
           ) : null}
 
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cinema-red/90 shadow-lg shadow-black/40 scale-90 group-hover:scale-100 transition-transform duration-300">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cinema-red/90 shadow-lg shadow-black/40">
               <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
           </div>

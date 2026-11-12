@@ -23,17 +23,19 @@ export function useSeries() {
   })
 }
 
-export function useLatestMovies() {
+export function useLatestMovies(enabled = true) {
   return useQuery({
     queryKey: ['movies', 'latest'],
     queryFn: async () => { try { return (await db.fetchLatestMovies()) ?? [] } catch { return [] as Movie[] } },
+    enabled,
   })
 }
 
-export function useComingSoon() {
+export function useComingSoon(enabled = true) {
   return useQuery({
     queryKey: ['movies', 'coming-soon'],
     queryFn: async () => { try { return (await db.fetchComingSoon()) ?? [] } catch { return [] as Movie[] } },
+    enabled,
   })
 }
 
@@ -94,7 +96,7 @@ export function useGenres() {
   })
 }
 
-export function useTrendingFromDb() {
+export function useTrendingFromDb(enabled = true) {
   return useQuery({
     queryKey: ['movies', 'trending-from-db'],
     queryFn: async () => {
@@ -128,13 +130,15 @@ export function useTrendingFromDb() {
       }
     },
     staleTime: 1000 * 60 * 60,
+    enabled,
   })
 }
 
 export function useCategoryFromDb(
   category: 'trending' | 'now_playing' | 'popular' | 'top_rated',
   region: string = '',
-  queryKeyExtra: string = ''
+  queryKeyExtra: string = '',
+  enabled = true
 ) {
   return useQuery({
     queryKey: ['movies', 'category-db', category, region, queryKeyExtra],
@@ -167,12 +171,14 @@ export function useCategoryFromDb(
       }
     },
     staleTime: 1000 * 60 * 60,
+    enabled,
   })
 }
 
 export function usePlatformMoviesFromDb(
   providerId: number,
-  region: string = 'ID'
+  region: string = 'ID',
+  enabled = true
 ) {
   return useQuery({
     queryKey: ['movies', 'platform-db', providerId, region],
@@ -232,7 +238,6 @@ export function usePlatformMoviesFromDb(
       }
     },
     staleTime: 1000 * 60 * 60,
+    enabled,
   })
 }
-
-

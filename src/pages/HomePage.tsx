@@ -81,13 +81,13 @@ export default function HomePage() {
       <PlatformsRow />
       
       {/* 1. Global Weekly Trending */}
-      {trendingLoad ? <MovieRowSkeleton /> : <MovieRow title="Trending This Week" movies={trending} />}
+      {trendingLoad ? <MovieRowSkeleton /> : <MovieRow title="Populer Minggu Ini" movies={trending} viewAllHref="/trending" />}
       
       {/* 2. Trending di Indonesia */}
       {trendingIdLoad ? (
         <MovieRowSkeleton />
       ) : (
-        trendingId.length > 0 && <MovieRow title="Trending di Indonesia" movies={trendingId} />
+        trendingId.length > 0 && <MovieRow title="Populer di Indonesia" movies={trendingId} viewAllHref="/trending/indonesia" />
       )}
 
       {/* Netflix Row */}
@@ -103,6 +103,7 @@ export default function HomePage() {
               </span>
             }
             movies={netflixTrending}
+            viewAllHref="/trending/netflix"
           />
         )
       )}
@@ -120,6 +121,7 @@ export default function HomePage() {
               </span>
             }
             movies={disneyTrending}
+            viewAllHref="/trending/disney-plus"
           />
         )
       )}
@@ -137,6 +139,7 @@ export default function HomePage() {
               </span>
             }
             movies={viuTrending}
+            viewAllHref="/trending/viu"
           />
         )
       )}
@@ -154,6 +157,7 @@ export default function HomePage() {
               </span>
             }
             movies={primeTrending}
+            viewAllHref="/trending/prime-video"
           />
         )
       )}
@@ -171,6 +175,7 @@ export default function HomePage() {
               </span>
             }
             movies={hboTrending}
+            viewAllHref="/trending/hbo-max"
           />
         )
       )}
@@ -188,6 +193,7 @@ export default function HomePage() {
               </span>
             }
             movies={appleTrending}
+            viewAllHref="/trending/apple-tv"
           />
         )
       )}
@@ -205,6 +211,7 @@ export default function HomePage() {
               </span>
             }
             movies={iqiyiTrending}
+            viewAllHref="/trending/iqiyi"
           />
         )
       )}
@@ -222,6 +229,7 @@ export default function HomePage() {
               </span>
             }
             movies={crunchyrollTrending}
+            viewAllHref="/trending/crunchyroll"
           />
         )
       )}
@@ -239,6 +247,7 @@ export default function HomePage() {
               </span>
             }
             movies={wetvTrending}
+            viewAllHref="/trending/wetv"
           />
         )
       )}
@@ -256,6 +265,7 @@ export default function HomePage() {
               </span>
             }
             movies={vidioTrending}
+            viewAllHref="/trending/vidio"
           />
         )
       )}
@@ -273,6 +283,7 @@ export default function HomePage() {
               </span>
             }
             movies={klikfilmTrending}
+            viewAllHref="/trending/klikfilm"
           />
         )
       )}
@@ -290,6 +301,7 @@ export default function HomePage() {
               </span>
             }
             movies={visionplusTrending}
+            viewAllHref="/trending/vision-plus"
           />
         )
       )}
@@ -298,34 +310,34 @@ export default function HomePage() {
       {nowPlayingLoad ? (
         <MovieRowSkeleton />
       ) : (
-        nowPlaying.length > 0 && <MovieRow title="Sedang Tayang di Bioskop" movies={nowPlaying} />
+        nowPlaying.length > 0 && <MovieRow title="Sedang Tayang di Bioskop" movies={nowPlaying} viewAllHref="/trending/now-playing" />
       )}
 
       {/* 4. Film Terpopuler */}
       {popularLoad ? (
         <MovieRowSkeleton />
       ) : (
-        popular.length > 0 && <MovieRow title="Film Terpopuler" movies={popular} />
+        popular.length > 0 && <MovieRow title="Film Terpopuler" movies={popular} viewAllHref="/trending/popular" />
       )}
 
       {/* 5. Rating Tertinggi */}
       {topRatedLoad ? (
         <MovieRowSkeleton />
       ) : (
-        topRated.length > 0 && <MovieRow title="Rating Tertinggi" movies={topRated} />
+        topRated.length > 0 && <MovieRow title="Rating Tertinggi" movies={topRated} viewAllHref="/trending/top-rated" />
       )}
 
-      {/* 6. Latest Movies */}
-      {moviesLoad ? <MovieGridSkeleton count={6} /> : <MovieGrid title="Latest Movies" movies={moviesOnly} />}
+      {/* 6. Film terbaru */}
+      {moviesLoad ? <MovieGridSkeleton count={6} /> : <MovieGrid title="Film Terbaru" movies={moviesOnly} viewAllHref="/movies?view=latest" />}
       
-      {/* 7. Popular Series */}
-      {seriesLoad ? <MovieRowSkeleton /> : <MovieRow title="Popular Series" movies={series} />}
+      {/* 7. Serial populer */}
+      {seriesLoad ? <MovieRowSkeleton /> : <MovieRow title="Serial Populer" movies={series} viewAllHref="/series" />}
       
       {/* 8. Genres / Categories Grid */}
       {genresLoad ? <MovieGridSkeleton count={8} /> : <CategoriesGrid genres={genres} />}
       
-      {/* 9. All Releases */}
-      {allLoad ? <MovieGridSkeleton /> : <MovieGrid title="All Releases" movies={allMovies} />}
+      {/* 9. Semua rilisan */}
+      {allLoad ? <MovieGridSkeleton /> : <MovieGrid title="Semua Rilisan" movies={allMovies} viewAllHref="/movies?view=all" />}
       
       {/* 10. Coming Soon */}
       {comingLoad ? <MovieGridSkeleton count={3} /> : <ComingSoon movies={upcoming} />}

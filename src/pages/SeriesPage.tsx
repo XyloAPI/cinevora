@@ -9,9 +9,9 @@ export default function SeriesPage() {
 
   return (
     <>
-      <SEO title="Series" description="Koleksi serial TV terbaru dengan subtitle Indonesia." />
-      {isLoading ? <MovieRowSkeleton /> : <MovieRow title="Popular Series" movies={series} />}
-      {isLoading ? <MovieGridSkeleton count={6} /> : <MovieGrid title="All Series" movies={series} />}
+      <SEO title="Serial" description="Koleksi serial TV terbaru dengan subtitle Indonesia." />
+      {isLoading ? <MovieRowSkeleton /> : <MovieRow title="Serial Populer" movies={series} />}
+      {isLoading ? <MovieGridSkeleton count={6} /> : <MovieGrid title="Semua Serial" movies={series} />}
     </>
   )
 }

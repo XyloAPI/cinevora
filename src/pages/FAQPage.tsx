@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IconArrowLeft } from '@tabler/icons-react'
 import SEO from '@/components/shared/SEO'
@@ -12,6 +13,17 @@ const faqs = [
 ]
 
 export default function FAQPage() {
+  const [openFaqs, setOpenFaqs] = useState<Set<string>>(new Set())
+
+  function toggleFaq(question: string) {
+    setOpenFaqs((current) => {
+      const next = new Set(current)
+      if (next.has(question)) next.delete(question)
+      else next.add(question)
+      return next
+    })
+  }
+
   return (
     <div className="min-h-screen bg-cinema-950 text-white pt-14">
       <SEO title="FAQ" description="Pertanyaan yang sering diajukan tentang Cinevora" />
@@ -21,15 +33,34 @@ export default function FAQPage() {
         </Link>
         <h1 className="text-2xl font-bold mb-8">Frequently Asked Questions</h1>
         <div className="space-y-4">
-          {faqs.map((faq) => (
-            <details key={faq.q} className="bg-cinema-900 border border-white/[0.06] rounded-lg group">
-              <summary className="px-4 py-3 text-sm font-medium cursor-pointer list-none flex items-center justify-between">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaqs.has(faq.q)
+            const answerId = `faq-answer-${index}`
+
+            return (
+              <section key={faq.q} className="bg-cinema-900 border border-white/[0.06] rounded-lg">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={answerId}
+                  onClick={() => toggleFaq(faq.q)}
+                  className="w-full px-4 py-3 text-left text-sm font-medium cursor-pointer flex items-center justify-between"
+                >
                 {faq.q}
-                <span className="text-white/20 group-open:rotate-180 transition-transform">&#9660;</span>
-              </summary>
-              <div className="px-4 pb-3 text-sm text-white/50 leading-relaxed">{faq.a}</div>
-            </details>
-          ))}
+                  <span className={`text-white/40 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180' : ''}`}>&#9660;</span>
+                </button>
+                <div
+                  id={answerId}
+                  aria-hidden={!isOpen}
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-3 text-sm text-white/50 leading-relaxed">{faq.a}</div>
+                  </div>
+                </div>
+              </section>
+            )
+          })}
         </div>
       </div>
     </div>

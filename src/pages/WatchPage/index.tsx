@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useMovieBySlug, useSubtitle } from '@/hooks/useMovies'
 import { IconPlayerPlayFilled, IconDownload } from '@tabler/icons-react'
 import SEO from '@/components/shared/SEO'
@@ -24,12 +24,66 @@ interface Season {
 
 export default function WatchPage() {
   const { slug = '' } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
   const { data: movie, isLoading } = useMovieBySlug(slug)
 
   const [activeSeason, setActiveSeason] = useState<number>(1)
   const [activeEpisode, setActiveEpisode] = useState<number>(1)
   const [activeServer, setActiveServer] = useState<'server1' | 'server2'>('server1')
   const [streamError, setStreamError] = useState(false)
+
+  useEffect(() => {
+    const initialWidthGap = window.outerWidth - window.innerWidth
+    const initialHeightGap = window.outerHeight - window.innerHeight
+    let redirected = false
+
+    const redirectHome = () => {
+      if (redirected) return
+      redirected = true
+      navigate('/', { replace: true })
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      const opensDevTools =
+        key === 'f12' ||
+        ((event.ctrlKey || event.metaKey) &&
+          (event.shiftKey || event.altKey) &&
+          ['i', 'j', 'c'].includes(key))
+
+      if (opensDevTools) {
+        event.preventDefault()
+        redirectHome()
+      }
+    }
+
+    const handleResize = () => {
+      const widthGap = window.outerWidth - window.innerWidth
+      const heightGap = window.outerHeight - window.innerHeight
+
+      if (widthGap - initialWidthGap > 160 || heightGap - initialHeightGap > 160) {
+        redirectHome()
+      }
+    }
+
+    const checkDebugger = () => {
+      const startedAt = performance.now()
+      debugger
+      if (performance.now() - startedAt > 100) redirectHome()
+    }
+
+    window.addEventListener('keydown', handleKeyDown, true)
+    window.addEventListener('resize', handleResize)
+    const devToolsPoll = window.setInterval(handleResize, 500)
+    const debuggerPoll = window.setInterval(checkDebugger, 1000)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true)
+      window.removeEventListener('resize', handleResize)
+      window.clearInterval(devToolsPoll)
+      window.clearInterval(debuggerPoll)
+    }
+  }, [navigate])
 
   // Parse seasons and episodes if it's a TV series
   const isSeries = movie?.type === 'series'

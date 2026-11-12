@@ -272,8 +272,9 @@ backup_url: finalBackupUrl || null,
       toast.success(isEdit ? 'Series/Movie updated' : 'Series/Movie added')
       closeForm()
       refetch()
-    } catch {
-      toast.error(isEdit ? 'Failed to update' : 'Failed to add')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown database error'
+      toast.error(`${isEdit ? 'Failed to update' : 'Failed to add'}: ${message}`)
     } finally {
       setSaving(false)
     }

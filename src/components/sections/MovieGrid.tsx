@@ -6,15 +6,20 @@ interface MovieGridProps {
   title: string
   movies: Movie[]
   id?: string
+  viewAllHref?: string
 }
 
-export default function MovieGrid({ title, movies, id }: MovieGridProps) {
+export default function MovieGrid({ title, movies, id, viewAllHref }: MovieGridProps) {
   return (
     <section id={id} className="py-6">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-bold">{title}</h2>
-          <Link to="/" className="text-[13px] text-white/30 hover:text-white/60 transition-colors">View All</Link>
+          {viewAllHref && (
+            <Link to={viewAllHref} className="text-[13px] text-white/30 hover:text-white/60 transition-colors">
+              Lihat Semua
+            </Link>
+          )}
         </div>
       </div>
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">

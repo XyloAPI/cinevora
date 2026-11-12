@@ -99,8 +99,21 @@ export async function onRequest(context) {
       }),
     })
 
+    if (!resp.ok) {
+      throw new Error(`Turso request failed: ${resp.status} ${resp.statusText}`)
+    }
+
     const data = await resp.json()
-    const result = data.results?.[0]?.response?.result
+    const firstResult = data.results?.[0]
+    if (firstResult?.type === 'error' || firstResult?.error) {
+      throw new Error(firstResult.error?.message || firstResult.error || 'Turso query failed')
+    }
+
+    const result = firstResult?.response?.result
+    if (!result) {
+      throw new Error('Turso returned no result')
+    }
+
     const cols: { name: string }[] = result?.cols || []
     const rawRows: { type: string; value: any }[][] = result?.rows || []
 

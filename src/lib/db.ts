@@ -15,9 +15,17 @@ async function dbQuery<T>(sql: string, params?: any[]): Promise<T[]> {
     headers,
     body: JSON.stringify({ sql, params }),
   })
-  if (!res.ok) throw new Error(`DB error: ${res.statusText}`)
-  const data = await res.json()
-  return data.rows || []
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || `DB error: ${res.statusText}`)
+  }
+  if (data?.error) {
+    throw new Error(data.error)
+  }
+  if (!Array.isArray(data?.rows)) {
+    throw new Error('Invalid database response')
+  }
+  return data.rows
 }
 
 export interface DbMovie {
@@ -158,54 +166,11 @@ function parseDbMovie(row: DbMovie) {
 }
 
 export async function addMovie(movie: Omit<DbMovie, 'id'> & { id: string }) {
-  const sql = `INSERT INTO movies (
-    id, slug, title, year, rating, genre, poster, backdrop, synopsis,
-    is_trending, is_featured, coming_soon, release_date, quality, duration, type,
-    episodes, seasons, tmdb_id, imdb_id, tagline, runtime, budget, revenue,
-    original_language, popularity, vote_count, homepage, director, cast,
-    logo_url, trailer_url, stream_url, stream_url_2, download_url, backup_url, production_companies, status, provider_id
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  await dbQuery(sql, [
-    movie.id,
-    movie.slug,
-    movie.title,
-    movie.year,
-    movie.rating,
-    movie.genre,
-    movie.poster,
-    movie.backdrop,
-    movie.synopsis,
-    movie.is_trending,
-    movie.is_featured,
-    movie.coming_soon,
-    movie.release_date,
-    movie.quality,
-    movie.duration,
-    movie.type,
-    movie.episodes,
-    movie.seasons,
-    movie.tmdb_id,
-    movie.imdb_id,
-    movie.tagline,
-    movie.runtime,
-    movie.budget,
-    movie.revenue,
-    movie.original_language,
-    movie.popularity,
-    movie.vote_count,
-    movie.homepage,
-    movie.director,
-    movie.cast,
-    movie.logo_url,
-    movie.trailer_url,
-    movie.stream_url,
-    movie.stream_url_2,
-    movie.download_url,
-    movie.backup_url,
-    movie.production_companies,
-    movie.status,
-    movie.provider_id,
-  ])
+  const values: DbMovie = movie
+  const columns = Object.keys(values)
+  const placeholders = columns.map(() => '?').join(', ')
+  const sql = `INSERT INTO movies (${columns.join(', ')}) VALUES (${placeholders})`
+  await dbQuery(sql, Object.values(values))
 }
 
 export async function updateMovie(id: string, movie: Partial<DbMovie>) {
