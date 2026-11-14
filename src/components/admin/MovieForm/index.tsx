@@ -29,6 +29,8 @@ export default function MovieForm({
 }: MovieFormProps) {
   const [synopsisText, setSynopsisText] = useState('')
   const [taglineText, setTaglineText] = useState('')
+  const [directorText, setDirectorText] = useState('')
+  const [castText, setCastText] = useState('')
   const [streamUrlText, setStreamUrlText] = useState('')
   const [streamUrl2Text, setStreamUrl2Text] = useState('')
   const [downloadUrlText, setDownloadUrlText] = useState('')
@@ -42,14 +44,22 @@ export default function MovieForm({
   const [synopsisTranslated, setSynopsisTranslated] = useState(false)
   const [translatingTagline, setTranslatingTagline] = useState(false)
   const [taglineTranslated, setTaglineTranslated] = useState(false)
+  const [translatingDirector, setTranslatingDirector] = useState(false)
+  const [directorTranslated, setDirectorTranslated] = useState(false)
+  const [translatingCast, setTranslatingCast] = useState(false)
+  const [castTranslated, setCastTranslated] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const originalSynopsisRef = useRef('')
   const originalTaglineRef = useRef('')
+  const originalDirectorRef = useRef('')
+  const originalCastRef = useRef('')
 
   useEffect(() => {
     setSynopsisText(editingMovie.synopsis || '')
     setTaglineText(editingMovie.tagline || '')
+    setDirectorText(editingMovie.director || '')
+    setCastText(editingMovie.cast?.join(', ') || '')
     setStreamUrlText(editingMovie.streamUrl || '')
     setStreamUrl2Text(editingMovie.streamUrl2 || '')
     setDownloadUrlText(editingMovie.downloadUrl || '')
@@ -57,8 +67,12 @@ export default function MovieForm({
     setBackupUrlText(editingMovie.backupUrl || '')
     setSynopsisTranslated(false)
     setTaglineTranslated(false)
+    setDirectorTranslated(false)
+    setCastTranslated(false)
     originalSynopsisRef.current = editingMovie.synopsis || ''
     originalTaglineRef.current = editingMovie.tagline || ''
+    originalDirectorRef.current = editingMovie.director || ''
+    originalCastRef.current = editingMovie.cast?.join(', ') || ''
     
     const typeVal = editingMovie.type || 'movie'
     setMediaType(typeVal)
@@ -362,8 +376,64 @@ backup_url: finalBackupUrl || null,
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Duration<input name="duration" defaultValue={editingMovie.duration || ''} placeholder="e.g. 2h 28m" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Runtime (min)<input name="runtime" type="number" defaultValue={editingMovie.runtime ?? ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Quality<input name="quality" defaultValue={editingMovie.quality || ''} placeholder="e.g. WEB-DL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Director<input name="director" defaultValue={editingMovie.director || ''} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
-        <label className="flex flex-col gap-1 text-[11px] text-white/40">Cast<input name="cast" defaultValue={editingMovie.cast?.join(', ') || ''} placeholder="comma separated" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <label htmlFor="director" className="text-[11px] text-white/40">Director</label>
+            <button type="button" disabled={translatingDirector} onClick={async () => {
+              if (translatingDirector) return
+              if (directorTranslated) {
+                setDirectorText(originalDirectorRef.current)
+                setDirectorTranslated(false)
+                return
+              }
+              const text = directorText
+              if (!text.trim()) return
+              originalDirectorRef.current = text
+              setTranslatingDirector(true)
+              try {
+                setDirectorText(await translateToId(text))
+                setDirectorTranslated(true)
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : 'Translate failed')
+              } finally {
+                setTranslatingDirector(false)
+              }
+            }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors uppercase tracking-wider disabled:opacity-50 ${translatingDirector ? 'bg-yellow-500/20 text-yellow-400 animate-pulse' : directorTranslated ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-cinema-red/20 text-cinema-red hover:bg-cinema-red/30'}`}>
+              {translatingDirector ? <><span className="inline-block w-2 h-2 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" /> ID</> : directorTranslated ? <><IconLanguage size={11} /> Asli</> : <><IconLanguage size={11} /> ID</>}
+            </button>
+          </div>
+          <input id="director" name="director" value={directorText} onChange={(e) => setDirectorText(e.target.value)} className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <label htmlFor="cast" className="text-[11px] text-white/40">Cast</label>
+            <button type="button" disabled={translatingCast} onClick={async () => {
+              if (translatingCast) return
+              if (castTranslated) {
+                setCastText(originalCastRef.current)
+                setCastTranslated(false)
+                return
+              }
+              const text = castText
+              if (!text.trim()) return
+              originalCastRef.current = text
+              setTranslatingCast(true)
+              try {
+                setCastText(await translateToId(text))
+                setCastTranslated(true)
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : 'Translate failed')
+              } finally {
+                setTranslatingCast(false)
+              }
+            }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors uppercase tracking-wider disabled:opacity-50 ${translatingCast ? 'bg-yellow-500/20 text-yellow-400 animate-pulse' : castTranslated ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-cinema-red/20 text-cinema-red hover:bg-cinema-red/30'}`}>
+              {translatingCast ? <><span className="inline-block w-2 h-2 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" /> ID</> : castTranslated ? <><IconLanguage size={11} /> Asli</> : <><IconLanguage size={11} /> ID</>}
+            </button>
+          </div>
+          <input id="cast" name="cast" value={castText} onChange={(e) => setCastText(e.target.value)} placeholder="comma separated" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" />
+        </div>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">Logo URL<input name="logoUrl" defaultValue={editingMovie.logoUrl || ''} placeholder="TMDB logo URL" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
             <label className="flex flex-col gap-1 text-[11px] text-white/40">Trailer URL<input name="trailerUrl" defaultValue={editingMovie.trailerUrl || ''} placeholder="YouTube URL atau file CDN (.mp4 / .webm)" className="bg-cinema-800 text-white text-[12px] px-2.5 py-1.5 rounded border border-white/[0.06] outline-none mt-0.5" /></label>
         <label className="flex flex-col gap-1 text-[11px] text-white/40">
